@@ -22,8 +22,13 @@ let channelWordDir = {
 
 // 今回ターゲットとしているチャンネルのIDリスト
 let targetChannelList = ['G5LBPD8G6', 'G5JT69BDW']
+
+// function定義ファイルの読み込み
 let util = require('./functions/utility.js').UTIL;
-let cancelController = require('./controller/cancel.js');
+
+// controller定義ファイルの読み込み
+let cancelController = require('./controller/cancel.js').CANCEL;
+cancelController.startController(controller);
 
 // PostgreSQL
 let connectionString = process.env.connectionstring;
@@ -42,7 +47,7 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
         // Utilityのプロパティ設定
         util.setProperty(bot, message, client);
         if (err) {
-            console.log('error: ' + err)
+            console.log('error: ' + err);
             return;
         }
         util.accoutAccessCountUp();
@@ -53,7 +58,7 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
         }
         client.query(selectStatus, (err, statusResult) => {
             if (err) {
-                util.botSay('現在のステータス取得時にエラー発生: ' + err)
+                util.botSay('現在のステータス取得時にエラー発生: ' + err);
                 client.end();
                 return;
             }
@@ -66,7 +71,7 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                     let selectMessage = config.sql.messageSearch.format(message.text)
                     client.query(selectMessage, (err, resultMessage) => {
                         if(err) {
-                            util.errorBotSay('現在のステータスが0ときのメッセージ取得時にエラー発生: ' + err)
+                            util.errorBotSay('現在のステータスが0ときのメッセージ取得時にエラー発生: ' + err);
                             client.end();
                             return;
                         }
@@ -98,9 +103,9 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                                 client.end();
                             }
                         } else if (resultMessage.rowCount > 1) {
-                            // util.botSay('(んー、なんと答えるのがべきなのか...。。:disappointed_relieved:)\n端的に話してくれると嬉しいな！', message.channel);
+                            util.botSay('(んー、なんと答えるのがべきなのか...。。:disappointed_relieved:)\n端的に話してくれると嬉しいな！', message.channel);
                         } else {
-                            // util.botSay('対話できるBotをここに用意したい。', message.channel);
+                            util.botSay('対話できるBotをここに用意したい。', message.channel);
                         }
                     });
                     break;
