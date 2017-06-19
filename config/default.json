@@ -1,0 +1,19 @@
+{
+  "sql":{
+    "messageSearch": "SELECT ms.message, ms.type_id FROM message as ms JOIN keyword as key ON ms.id = key.message_id WHERE '{0}' LIKE '%' || key.keyword || '%';",
+    "schedule":{
+      "messageList": "SELECT key.keyword, ms.message, ms.type FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE {0} = ms.type;"
+    },
+    "channels": "SELECT channel_id, name, reviewer_flg FROM channels;",
+    "channelStatus": "SELECT * FROM channel_status as cs WHERE channel_id = '{0}'",
+    "accountChannelStatus": "SELECT * FROM channel_composition as cc INNER JOIN account_channel_status as acs ON cc.id = acs.id WHERE cc.account_id = '{0}' ;",
+    "channelCompositionFromChannelIdAndAccountId": "SELECT * FROM channel_composition as cc WHERE channel_id = '{0}' AND account_id = '{1}';",
+    "channelCompositionFromAccountId": "SELECT channel_id from channel_composition WHERE account_id = 'U5KL5AHC5';",
+    "update":{
+      "accessCountUpDirectMessage": "UPDATE account SET access_count = access_count + 1 WHERE account_id = '{0}';",
+      "accessCountUpChannelMessage": "UPDATE account_channel_status SET access_count = access_count + 1 WHERE id = (SELECT id from channel_composition WHERE channel_id = '{0}' AND account_id = '{1}')",
+      "channelStatus": "UPDATE channel_status SET {0} WHERE channel_id = '{1}'",
+      "accountChannelStatus": "UPDATE account_channel_status SET {0} WHERE id = (SELECT id from channel_composition WHERE channel_id = '{1}' AND account_id = '{2}')"
+    }   
+  }
+}
