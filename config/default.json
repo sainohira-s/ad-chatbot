@@ -1,6 +1,26 @@
 {
+  "messagetype": {
+    "NegativeWord":{
+      "id": 1,
+      "name": "ネガティブワード"
+     },
+    "SelfReview":{
+      "id": 2,
+      "name": "セルフレビュー"
+     },
+     "Index":{
+      "id": 3,
+      "name": "辞書登録"
+     },
+     "RegularWord":{
+      "id": 4,
+      "name": "定期一言配信"
+     }
+  },
   "sql":{
-    "messageSearch": "SELECT ms.message, ms.type_id FROM message as ms JOIN keyword as key ON ms.id = key.message_id WHERE '{0}' LIKE '%' || key.keyword || '%';",
+    "message":{
+      "search": "SELECT ms.message, ms.type FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE '{0}' LIKE '%' || key.keyword || '%';"
+    },
     "schedule":{
       "messageList": "SELECT key.keyword, ms.message, ms.type FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE {0} = ms.type;"
     },

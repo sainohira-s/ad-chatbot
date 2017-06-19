@@ -1,0 +1,2 @@
+INSERT INTO public.channels(channel_id, name) VALUES ('001', 'general');
+INSERT INTO public.channels(channel_id, name) VALUES ('002', 'my_tests_channel');
