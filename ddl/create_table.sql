@@ -14,6 +14,9 @@ DROP TABLE keyword;
 DROP TABLE message;
 DROP TABLE message_type;
 
+-- generate uuidを使用するためにEXTENSION追加
+CREATE EXTENSION pgcrypto;
+
 -- メッセージ関連テーブル
 CREATE TABLE message_type (
     id     int            PRIMARY KEY,
@@ -21,17 +24,17 @@ CREATE TABLE message_type (
 );
 
 CREATE TABLE message (
-    id          int PRIMARY KEY,
+    id          UUID            PRIMARY KEY,
     message     varchar(500)[]  NOT NULL,
     type_id     int             NOT NULL,
     FOREIGN KEY (type_id) REFERENCES message_type (id)
 );
 
 CREATE TABLE keyword (
-    id          serial PRIMARY KEY,
-    message_id  int NOT NULL,
-    keyword     varchar(20) NOT NULL UNIQUE,
-    FOREIGN KEY (message_id) REFERENCES message (id)
+    id          UUID    PRIMARY KEY,
+    message_id  int     NOT NULL,
+    keyword     varchar(20)     NOT NULL UNIQUE,
+    FOREIGN KEY (message_id)    REFERENCES message (id)
 );
 
 -- ステータス関連テーブル
@@ -42,30 +45,30 @@ CREATE TABLE channel (
 );
 
 CREATE TABLE account (
-    account_id         varchar(20)     PRIMARY KEY,
+    account_id      varchar(20)     PRIMARY KEY,
     name            varchar(20)     NOT NULL,
     reviewer_flg    boolean         NOT NULL,
     access_count    int             NOT NULL
 );
 
 CREATE TABLE channel_composition (
-    id              varchar(10)    PRIMARY KEY,
-    channel_id      varchar(20)    NOT NULL,
-    account_id         varchar(20)    NOT NULL,
+    id              UUID            PRIMARY KEY,
+    channel_id      varchar(20)     NOT NULL,
+    account_id         varchar(20)  NOT NULL,
     FOREIGN KEY (channel_id) REFERENCES channel (channel_id),
     FOREIGN KEY (account_id) REFERENCES account (account_id)
 );
 
 CREATE TABLE channel_status (
     channel_id      varchar(20)     NOT NULL,
-    current_type_id int     NOT NULL,
-    stage           int     NOT NULL,
+    current_type_id int             NOT NULL,
+    stage           int             NOT NULL,
     FOREIGN KEY (channel_id) REFERENCES channel (channel_id),
     FOREIGN KEY (current_type_id) REFERENCES message_type (id)
 );
 
 CREATE TABLE account_channel_status (
-    id              varchar(20)     PRIMARY KEY,
+    id              varchar(20) PRIMARY KEY,
     current_type_id int     NOT NULL,
     stage           int     NOT NULL,
     access_count    int     NOT NULL,

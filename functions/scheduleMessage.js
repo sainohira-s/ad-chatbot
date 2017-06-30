@@ -12,16 +12,18 @@ exports.says = function(bot) {
             console.log('[scheduleMessage]DB connected failed.', err);
             return;
         }
-        var scheduleListSql = config.sql.schedule.messageList.format(config.messagetype.RegularWord.id);
+        var scheduleListSql = config.sql.Schedule.messageList.format(config.messagetype.RegularWord.id);
         client.query(scheduleListSql, function(err, resultSchedule) {
             if(err) {
                 console.log('[scheduleMessage]error running ScheduleList query.', err);
+                client.end()
                 return;
             }
             if(resultSchedule.rowCount > 0){
                 client.query(config.sql.channels, function(err, resultChannel) {
                     if(err) {
                         console.log('[scheduleMessage]error running ChannelList query.', err);
+                        client.end()
                         return;
                     }
                     channelsList = resultChannel;

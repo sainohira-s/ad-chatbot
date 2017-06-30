@@ -21,19 +21,23 @@
     "message":{
       "search": "SELECT ms.message, ms.type FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE '{0}' LIKE '%' || key.keyword || '%';"
     },
-    "schedule":{
+    "Schedule":{
       "messageList": "SELECT key.keyword, ms.message, ms.type FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE {0} = ms.type;"
     },
     "channels": "SELECT channel_id, name, reviewer_flg FROM channels;",
-    "channelStatus": "SELECT * FROM channel_status as cs WHERE channel_id = '{0}'",
-    "accountChannelStatus": "SELECT * FROM channel_composition as cc INNER JOIN account_channel_status as acs ON cc.id = acs.id WHERE cc.account_id = '{0}' ;",
-    "channelCompositionFromChannelIdAndAccountId": "SELECT * FROM channel_composition as cc WHERE channel_id = '{0}' AND account_id = '{1}';",
-    "channelCompositionFromAccountId": "SELECT channel_id from channel_composition WHERE account_id = 'U5KL5AHC5';",
-    "update":{
-      "accessCountUpDirectMessage": "UPDATE account SET access_count = access_count + 1 WHERE account_id = '{0}';",
-      "accessCountUpChannelMessage": "UPDATE account_channel_status SET access_count = access_count + 1 WHERE id = (SELECT id from channel_composition WHERE channel_id = '{0}' AND account_id = '{1}')",
-      "channelStatus": "UPDATE channel_status SET {0} WHERE channel_id = '{1}'",
-      "accountChannelStatus": "UPDATE account_channel_status SET {0} WHERE id = (SELECT id from channel_composition WHERE channel_id = '{1}' AND account_id = '{2}')"
-    }   
+    "userStatus": "SELECT * FROM User_Status WHERE user_id = {0};",
+    "groupStatus": "SELECT * FROM Group_Status WHERE group_id = {0};",
+    "user":{
+      "search": "SELECT * FROM account WHERE '{0}' = account_id;",
+      "insert": "INSERT INTO account(account_id, name, reviewer_flg, access_count) VALUES ('{0}', '{1}', false, 1);"
+    },
+    "channel":{
+      "search": "SELECT * FROM channel WHERE '{0}' = channel_id;",
+      "insert": "INSERT INTO channel(channel_id, name, reviewer_flg) VALUES ('{0}', '{1}', false);"
+    },
+    "composition":{
+      "search": "SELECT * FROM channel_composition WHERE '{0}' = account_id AND '{1}' = channel_id;",
+      "insert": "INSERT INTO channel_composition(id, account_id, channel_id) VALUES (gen_random_uuid(), '{0}', '{1}');"
+    }
   }
 }
