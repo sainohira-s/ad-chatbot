@@ -5,19 +5,44 @@ var msg = require('./functions/message.js');
 var scMsg = require('./functions/scheduleMessage.js');
 var user = require('./functions/user.js');
 
-var urlencodedParser = bodyParser.urlencoded({ extended: false })
-
-const controller = Botkit.slackbot({
+var controller = Botkit.slackbot({
     debug: false
+}).configureSlackApp(
+  {
+    clientId: process.env.clientid,
+    clientSecret: process.env.clientsecret,
+    scopes: ['bot'],
+  }
+);
+
+var activeBot = {};
+function trackBot(bot) {
+    activeBot[bot.config.token] = bot;
+}
+
+controller.on('create_bot',function(bot,config) {
+    if (activeBot[bot.config.token]) {
+    }
+    else{
+        bot.startRTM(function(err, bot, payload){
+            if (err) {
+                throw new Error(err);
+            }
+            scMsg.says(bot);
+        });
+    }
 });
 
-controller.spawn({
-    token: process.env.token
-}).startRTM(function(err, bot, payload){
+controller.setupWebserver('8080', function(err,webserver) {
+  controller.createWebhookEndpoints(controller.webserver);
+
+  controller.createOauthEndpoints(controller.webserver,function(err,req,res) {
     if (err) {
-        throw new Error(err);
+        res.status(500).send('OAuth ERROR: ' + err);
+    } else {
+        res.send('Success! Slack Appの認証に成功しました');
     }
-    scMsg.says(bot);
+  });
 });
 
 controller.hears('',['direct_mention','mention'],function(bot, message) {
@@ -25,11 +50,23 @@ controller.hears('',['direct_mention','mention'],function(bot, message) {
 });
 
 controller.hears('',['direct_message'],function(bot, message) {
+    if(message.text == 'button'){
+        buttonReply(bot, message);
+        return;
+    }
+
     msg.mentionReplyMessage(bot, message);
 });
 
 controller.hears('',['ambient','direct_message','direct_mention','mention'],function(bot, message) {
     msg.selfishMessage(bot, message);
+});
+
+controller.on('interactive_message_callback', function(bot, message) {
+    var users_answer = message.actions[0].name;
+    if (message.callback_id == "test_button") {
+        bot.replyInteractive(message, "あなたは「" + users_answer + "」を押しました");
+    }
 });
 
 controller.hears('',['bot_channel_join'],function(bot, message) {
@@ -64,4 +101,49 @@ if (String.prototype.format == undefined) {
     }
     return this.replace( /\{(\w+)\}/g, rep_fn );
   }
+}
+
+function buttonReply(bot, message){
+    var reply = {
+        "text": "ボタンテスト",
+        "attachments": [{
+            "text": "どれか押して",
+            "fallback": "失敗",
+            "callback_id": "test_button",
+            "color": "#55AA00",
+            "actions": [
+                {
+                    "type": "button",
+                    "name": "test_button1",
+                    "text": "テストボタン1"
+                },
+                {
+                    "text": "*bold* `code` _italic_ ~strike~",
+                    "username": "markdownbot",
+                    "mrkdwn": true
+                },
+                {
+                    "name": "game",
+                    "text": "Falken's Maze",
+                    "type": "button",
+                    "value": "maze"
+                },
+                {
+                    "name": "game",
+                    "text": "Thermonuclear War",
+                    "style": "danger",
+                    "type": "button",
+                    "value": "war",
+                    "confirm": {
+                        "title": "Are you sure?",
+                        "text": "Wouldn't you prefer a good game of chess?",
+                        "ok_text": "Yes",
+                        "dismiss_text": "No"
+                    }
+                }
+            ]
+        }]
+    };
+    bot.reply(message, reply);
+    return;
 }
