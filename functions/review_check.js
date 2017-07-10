@@ -279,9 +279,16 @@ function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent
                                 }
                                 let selectChanelFromReviewerFlg = config.sql.channelFromReviewerFlg.format('true')
                                 client.query(selectChanelFromReviewerFlg, function(err, resultChanelFromReviewerFlg) {
-                                    resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
-                                        util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', channelInfo.channel_id);
-                                    });
+                                    if(err) {
+                                        util.errorBotSay('レビューアーへ通知処理(レビュー完了)時にエラー発生: ' + err);
+                                        client.end();
+                                        return;
+                                    }
+                                    if (resultChanelFromReviewerFlg.rowCount >= 0) {
+                                        resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
+                                            util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', channelInfo.channel_id);
+                                        });
+                                    }
                                 });
                                 util.botSay(accountName + 'さんが `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', accountChannelId)
                                 text = text + '\n班員に `'+ questionListResult.rows[0].summary + '` のセルフレビューチェックが完了したことを通知しました。';
@@ -402,9 +409,16 @@ function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent
                                     }
                                     let selectChanelFromReviewerFlg = config.sql.channelFromReviewerFlg.format('true')
                                     client.query(selectChanelFromReviewerFlg, function(err, resultChanelFromReviewerFlg) {
-                                        resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
-                                            util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェック(個人)で不合格がでたため【合格 → 不合格】になりました。', channelInfo.channel_id)
-                                        });
+                                        if(err) {
+                                            util.errorBotSay('レビューアーへ通知処理(レビュー不合格完了)時にエラー発生: ' + err);
+                                            client.end();
+                                            return;
+                                        }
+                                        if (resultChanelFromReviewerFlg.rowCount >= 0) {
+                                            resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
+                                                util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェック(個人)で不合格がでたため【合格 → 不合格】になりました。', channelInfo.channel_id)
+                                            });
+                                        }
                                     });
                                     util.botSay('班の合格ステータスが不合格になったとことをレビュアーメンバーに通知しました。', channelId)
                                     client.end();
@@ -450,9 +464,16 @@ function updateChannelPassingSummary(crrent_channel, accountChannelId, accountCh
         }
         let selectChanelFromReviewerFlg = config.sql.channelFromReviewerFlg.format('true')
         client.query(selectChanelFromReviewerFlg, function(err, resultChanelFromReviewerFlg) {
-            resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
-                util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', channelInfo.channel_id);
-            });
+            if(err) {
+                util.errorBotSay('レビューアーへ通知処理(個人レビュー完了)時にエラー発生: ' + err);
+                client.end();
+                return;
+            }
+            if (resultChanelFromReviewerFlg.rowCount >= 0) {
+                resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
+                    util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', channelInfo.channel_id);
+                });
+            }
         });
         util.botSay(accountName + 'さんが `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', accountChannelId)
         text = text + '\n班員に `'+ questionListResult.rows[0].summary + '` のセルフレビューチェックが完了したことを通知しました。';
