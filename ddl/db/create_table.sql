@@ -14,6 +14,9 @@ DROP TABLE keyword;
 DROP TABLE message;
 DROP TABLE message_type;
 
+-- generate UUIDを使用するためにEXTENSION追加
+CREATE EXTENSION pgcrypto;
+
 -- メッセージ関連テーブル
 CREATE TABLE message_type (
     id     int            PRIMARY KEY,
@@ -21,15 +24,15 @@ CREATE TABLE message_type (
 );
 
 CREATE TABLE message (
-    id          int PRIMARY KEY,
+    id          UUID            PRIMARY KEY,
     message     varchar(500)[]  NOT NULL,
     type_id     int             NOT NULL,
     FOREIGN KEY (type_id) REFERENCES message_type (id)
 );
 
 CREATE TABLE keyword (
-    id          serial PRIMARY KEY,
-    message_id  int NOT NULL,
+    id          UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+    message_id  UUID        NOT NULL,
     keyword     varchar(20) NOT NULL UNIQUE,
     FOREIGN KEY (message_id) REFERENCES message (id)
 );
@@ -42,16 +45,16 @@ CREATE TABLE channel (
 );
 
 CREATE TABLE account (
-    account_id         varchar(20)     PRIMARY KEY,
+    account_id      varchar(20)     PRIMARY KEY,
     name            varchar(20)     NOT NULL,
     reviewer_flg    boolean         NOT NULL,
     access_count    int             NOT NULL
 );
 
 CREATE TABLE channel_composition (
-    id              varchar(10)    PRIMARY KEY,
+    id              varchar(51)    PRIMARY KEY,
     channel_id      varchar(20)    NOT NULL,
-    account_id         varchar(20)    NOT NULL,
+    account_id      varchar(20)    NOT NULL,
     FOREIGN KEY (channel_id) REFERENCES channel (channel_id),
     FOREIGN KEY (account_id) REFERENCES account (account_id)
 );
@@ -65,7 +68,7 @@ CREATE TABLE channel_status (
 );
 
 CREATE TABLE account_channel_status (
-    id              varchar(20)     PRIMARY KEY,
+    id              varchar(51)    PRIMARY KEY,
     current_type_id int     NOT NULL,
     stage           int     NOT NULL,
     access_count    int     NOT NULL,
@@ -111,7 +114,7 @@ CREATE TABLE review_question (
 );
 
 CREATE TABLE review_channel_status (
-    channel_id           varchar(10)     PRIMARY KEY,
+    channel_id          varchar(10)     PRIMARY KEY,
     current_summary_id  int,
     current_question    int,
     passing_summary     varchar(200)[],
@@ -120,10 +123,26 @@ CREATE TABLE review_channel_status (
 );
 
 CREATE TABLE review_account_channel_status (
-    id                  varchar(10)     PRIMARY KEY,
+    id                  varchar(51)    PRIMARY KEY,
     current_summary_id  int,
     current_question    int,
     passing_summary     varchar(200)[],
     passing_question    varchar(800)[],
     FOREIGN KEY (id) REFERENCES channel_composition (id)
 );
+
+GRANT SELECT, UPDATE, INSERT ON TABLE review_account_channel_status TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE review_channel_status TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE channel_status TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE account_channel_status TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE channel_composition TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE account TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE channel TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE review_question TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE review_title TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE review_summary_keyword TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE review_summary TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE review_Title_Category TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE keyword TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE message TO test;
+GRANT SELECT, UPDATE, INSERT ON TABLE message_type TO test;

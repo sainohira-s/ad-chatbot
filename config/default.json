@@ -1,19 +1,87 @@
 {
+  "messageType": {
+    "message":{
+      "id": 1,
+      "name": "メッセージ"
+     },
+    "selfReviewList":{
+      "id": 2,
+      "name": "レビュー一覧"
+     },
+     "selfReviewCheck":{
+      "id": 3,
+      "name": "レビューチェック"
+     },
+     "regularWord":{
+      "id": 4,
+      "name": "定期一言配信"
+     },
+     "channelMessage":{
+      "id": 5,
+      "name": "メッセージ"
+     }
+  },
   "sql":{
+    "message":{
+      "search": "SELECT ms.message, ms.type_id FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE '{0}' LIKE '%' || key.keyword || '%';"
+    },
+    "Schedule":{
+      "messageList": "SELECT key.keyword, ms.message, ms.type_id FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE {0} = ms.type_id;"
+    },
+    "composition":{
+      "search": "SELECT * FROM channel_composition WHERE '{0}' = account_id AND '{1}' = channel_id;",
+      "insert": "INSERT INTO channel_composition(id, account_id, channel_id) VALUES (gen_random_uuid(), '{0}', '{1}');"
+    },
     "messageSearch": "SELECT ms.message, ms.type_id FROM message as ms JOIN keyword as key ON ms.id = key.message_id WHERE '{0}' LIKE '%' || key.keyword || '%';",
     "schedule":{
-      "messageList": "SELECT key.keyword, ms.message, ms.type FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE {0} = ms.type;"
+      "messageList": "SELECT key.keyword, ms.message, ms.type_id FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE {0} = ms.type_id;"
     },
-    "channels": "SELECT channel_id, name, reviewer_flg FROM channels;",
+    "accountFromAccountId":"SELECT * FROM account WHERE account_id = '{0}'",
+    "channels": "SELECT channel_id, name, reviewer_flg FROM channel;",
+    "channel":"SELECT * FROM channel WHERE channel_id = '{0}';",
     "channelStatus": "SELECT * FROM channel_status as cs WHERE channel_id = '{0}'",
-    "accountChannelStatus": "SELECT * FROM channel_composition as cc INNER JOIN account_channel_status as acs ON cc.id = acs.id WHERE cc.account_id = '{0}' ;",
+    "accountChannelStatus": "SELECT * FROM channel_composition as cc INNER JOIN account_channel_status as acs ON cc.id = acs.id WHERE cc.account_id = '{0}';",
     "channelCompositionFromChannelIdAndAccountId": "SELECT * FROM channel_composition as cc WHERE channel_id = '{0}' AND account_id = '{1}';",
-    "channelCompositionFromAccountId": "SELECT channel_id from channel_composition WHERE account_id = 'U5KL5AHC5';",
+    "channelCompositionFromAccountId": "SELECT channel_id from channel_composition WHERE account_id = '{0}';",
+    "channelFromReviewerFlg":"SELECT * FROM channel WHERE reviewer_flg={0}",
+    "uuid":"select uuid_generate_v4()",
+    "review":{
+      "summaryList":"SELECT id, summary FROM Review_Summary ORDER BY id;",
+      "summaryFromKeyword":"SELECT * FROM review_summary_keyword as rsk INNER JOIN review_summary as rs ON rsk.summary_id = rs.id WHERE '{0}' LIKE '%' || rsk.keyword || '%';",
+      "summaryFromId":"SELECT * FROM review_summary_keyword as rsk INNER JOIN review_summary as rs ON rsk.summary_id = rs.id WHERE rs.id = '{0}';",
+      "channelStatus":"SELECT * FROM channel as c INNER JOIN review_channel_status as rcs ON c.channel_id = rcs.channel_id WHERE c.reviewer_flg=false AND c.channel_id = '{0}'",
+      "channelStatusForReviewer":"SELECT * FROM channel as c INNER JOIN review_channel_status as rcs ON c.channel_id = rcs.channel_id WHERE c.reviewer_flg=false AND NOT c.channel_id = '{0}' ORDER BY name;",
+      "accountChannelStatus":"SELECT a.account_id, a.name, passing_summary, passing_question FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id WHERE channel_id = '{0}';",
+      "accountChannelStatusFromAccountId":"SELECT a.account_id, cc.channel_id, a.name, passing_summary, passing_question, current_summary_id, current_question FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id WHERE a.account_id = '{0}';",
+      "questionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rt.category_id = {0} ORDER BY RT.id DESC, question_number DESC;",
+      "okQuestionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rt.category_id = {0} AND RQ.id = ANY(ARRAY[{1}]) ORDER BY RT.id DESC, question_number DESC;",
+      "ngQuestionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE  rt.category_id = {0} AND NOT RQ.id = ANY(ARRAY[{1}]) ORDER BY RT.id DESC, question_number DESC;",
+      "questionList":"SELECT * FROM (review_summary_keyword as rsk INNER JOIN review_summary as rs ON summary_id = rs.id) INNER JOIN review_title as rt ON rs.category_id = rt.category_id INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE '{0}' LIKE '%' || rsk.keyword || '%' ORDER BY rq.title_id, question_number;",
+      "questionListFromSummaryId":"SELECT rs.id as summary_id, rs.summary, rt.title_number, rt.title, rq.id as question_id, question, rq.question_number FROM review_summary as rs INNER JOIN review_title as rt ON rs.category_id = rt.category_id INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rs.id = {0} ORDER BY rq.title_id, question_number;",
+      "summaryAndQuestionListFromAccountId":"SELECT ac.account_id, ac.name as account_name, ch.channel_id, ch.name as channel_name, racs.passing_summary as a_passing_summary, racs.passing_question as a_passing_question, rcs.passing_summary as c_passing_summary, rcs.passing_question as c_passing_question FROM account as ac INNER JOIN channel_composition as cc ON ac.account_id = cc.account_id INNER JOIN review_account_channel_Status as racs ON cc.id = racs.id INNER JOIN channel as ch ON ch.channel_id = cc.channel_id INNER JOIN review_channel_status as rcs ON ch.channel_id = rcs.channel_id WHERE ch.channel_id = '{0}';",
+      "update":{
+        "channelStatus":"UPDATE review_channel_status SET {0} WHERE channel_id = '{1}'",
+        "accountChannelStatus":"UPDATE review_account_channel_status SET {0} WHERE id = (SELECT id FROM channel_composition WHERE channel_id = '{1}' AND account_id = '{2}')",
+        "channelPassingQuestion":"UPDATE review_channel_status SET passing_question = ARRAY[{0}] WHERE channel_id = '{1}'",
+        "accountChannelPassingQuestion":"UPDATE review_account_channel_status SET passing_question = ARRAY[{0}] WHERE id = (SELECT id FROM channel_composition WHERE account_id = '{1}')",
+        "channelPassingSummary":"UPDATE review_channel_status SET passing_summary = ARRAY[{0}] WHERE channel_id = '{1}'",
+        "accountChannelPassingSummary":"UPDATE review_account_channel_status SET passing_summary = ARRAY[{0}] WHERE id = (SELECT id FROM channel_composition WHERE channel_id = '{1}' AND account_id = '{2}')"
+      }
+    },
     "update":{
       "accessCountUpDirectMessage": "UPDATE account SET access_count = access_count + 1 WHERE account_id = '{0}';",
-      "accessCountUpChannelMessage": "UPDATE account_channel_status SET access_count = access_count + 1 WHERE id = (SELECT id from channel_composition WHERE channel_id = '{0}' AND account_id = '{1}')",
-      "channelStatus": "UPDATE channel_status SET {0} WHERE channel_id = '{1}'",
-      "accountChannelStatus": "UPDATE account_channel_status SET {0} WHERE id = (SELECT id from channel_composition WHERE channel_id = '{1}' AND account_id = '{2}')"
-    }   
+      "accessCountUpChannelMessage": "UPDATE account_channel_status SET access_count = access_count + 1 WHERE id = (SELECT id from channel_composition WHERE channel_id = '{0}' AND account_id = '{1}');",
+      "channelStatus": "UPDATE channel_status SET {0} WHERE channel_id = '{1}';",
+      "accountChannelStatus": "UPDATE account_channel_status SET {0} WHERE id = (SELECT id from channel_composition WHERE channel_id = '{1}' AND account_id = '{2}');"
+    },
+    "insert":{
+      "channel":"INSERT INTO channel(channel_id, name, reviewer_flg) VALUES ('{0}', '{1}', false);",
+      "channelStatus":"INSERT INTO channel_status VALUES ('{0}', 1, 1);",
+      "reviewChannelStatus":"INSERT INTO review_channel_status VALUES ('{0}', 0, 0, ARRAY[0], ARRAY['0_0']);",
+      "account":"INSERT INTO account VALUES ('{0}', '{1}', false, 0);",
+      "channelComposition":"INSERT INTO channel_composition VALUES ('{0}', '{1}', '{2}');",
+      "accountChannelStatus":"INSERT INTO account_channel_status VALUES ('{0}', 1, 1, 0);",
+      "reviewAccountChannelStatus":"INSERT INTO review_account_channel_status VALUES ('{0}', 0, 0, ARRAY[0], ARRAY['0_0']);"
+    }
   }
 }

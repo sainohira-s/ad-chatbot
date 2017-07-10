@@ -17,9 +17,7 @@ MAIN.setProperty = function setProperty(slackBot, recieveMessage, pgClient) {
 /**
 * ステータスの更新処理(引数がnullの項目は、更新されない)
 */
-
-MAIN.updateStatus = function updateStatus(currentTypeId, stage, currentSummaryId, currentQuestion, targetChannelList) {
-    let channelMatchFlag = (targetChannelList.indexOf(message.channel) >= 0);
+MAIN.updateStatus = function updateStatus(currentTypeId, stage, targetChannelList) {
     let setPhrase = ``;
     if (currentTypeId != null){
         setPhrase = setPhrase + `current_type_id = ${currentTypeId}, `;
@@ -27,14 +25,8 @@ MAIN.updateStatus = function updateStatus(currentTypeId, stage, currentSummaryId
     if (stage != null){
         setPhrase = setPhrase + `stage = ${stage}, `;
     }
-    if (currentSummaryId != null) {
-        setPhrase = setPhrase + `current_summary_id = ${currentSummaryId}, `;
-    }
-    if (currentQuestion != null) {
-        setPhrase = setPhrase + `currentQuestion = ${currentQuestion}, `;
-    }
     setPhrase = setPhrase.substr(0, setPhrase.length-2);
-    if (channelMatchFlag) {
+    if (targetChannelList.indexOf(message.channel) >= 0) {
         let updateStatus = config.sql.update.channelStatus.format(setPhrase, message.channel);
         client.query(updateStatus, function(err, result) {
             if(err) {
@@ -44,21 +36,67 @@ MAIN.updateStatus = function updateStatus(currentTypeId, stage, currentSummaryId
             }
         });
     } else {
-        selectchannelComposition = config.sql.channelCompositionFromAccountId.format(message.user);
+        let selectchannelComposition = config.sql.channelCompositionFromAccountId.format(message.user);
         client.query(selectchannelComposition, function(err, channelCompostionResult) {
             if(err) {
                 MAIN.errorBotSay('ステータス変更時のチャンネル構成取得時にエラー発生: ' + err);
                 client.end();
                 return;
             }
-            if (result.rowCount == 1) {
-                let updateStatus = config.sql.update.channelStatus.format(setPhrase, result.row[0].channel_id);
+            if (channelCompostionResult.rowCount == 1) {
+                let updateStatus = config.sql.update.accountChannelStatus.format(setPhrase, channelCompostionResult.rows[0].channel_id, message.user);
                 client.query(updateStatus, function(err, result) {
                     if(err) {
                         MAIN.errorBotSay('ステータス更新時にエラー発生: ' + err);
                         client.end();
-                     return;
-                 }
+                        return;
+                     }
+                });
+            }
+        });
+    }
+}
+
+MAIN.updateReviewStatus = function updateReviewStatus(passingSummary, passingQuestion, currentSummaryId, currentQuestion, targetChannelList){
+    let setPhrase = ``;
+    if (passingSummary != null) {
+        setPhrase = setPhrase + `passing_summary = ARRAY[${passingSummary}], `;
+    }
+    if (passingQuestion != null) {
+        setPhrase = setPhrase + `passing_question = ARRAY[${passingQuestion}], `;
+    }
+    if (currentSummaryId != null) {
+        setPhrase = setPhrase + `current_summary_id = ${currentSummaryId}, `;
+    }
+    if (currentQuestion != null) {
+        setPhrase = setPhrase + `current_question = ${currentQuestion}, `;
+    }
+    setPhrase = setPhrase.substr(0, setPhrase.length-2);
+    if (targetChannelList.indexOf(message.channel) >= 0) {
+        let updateStatus = config.sql.review.update.channelStatus.format(setPhrase, message.channel);
+        client.query(updateStatus, function(err, result) {
+            if(err) {
+                MAIN.errorBotSay('レビューステータス更新時にエラー発生: ' + err);
+                client.end();
+                return;
+            }
+        });
+    } else {
+        let selectchannelComposition = config.sql.channelCompositionFromAccountId.format(message.user);
+        client.query(selectchannelComposition, function(err, channelCompostionResult) {
+            if(err) {
+                MAIN.errorBotSay('レビューステータス変更時のチャンネル構成取得時にエラー発生: ' + err);
+                client.end();
+                return;
+            }
+            if (channelCompostionResult.rowCount == 1) {
+                let updateStatus = config.sql.review.update.accountChannelStatus.format(setPhrase, channelCompostionResult.rows[0].channel_id, message.user);
+                client.query(updateStatus, function(err, result) {
+                    if(err) {
+                        MAIN.errorBotSay('レビューステータス更新時にエラー発生: ' + err);
+                        client.end();
+                        return;
+                     }
                 });
             }
         });
