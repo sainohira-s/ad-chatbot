@@ -100,12 +100,11 @@ function indicateQuestion(summaryResult, accountChannelStatusResult, channelId) 
         let questionNumber = parseInt(accountChannelStatusResult.rows[0].current_question);
         if (accountChannelStatusResult.rows[0].current_summary_id == 0) {
             text = text + '`' + summaryResult.rows[0].summary + '` のレビューチェック(全 `' + questionListForTitleResult.rowCount + '` 項目)を開始します。OK/NGで回答してください。';
-            util.updateReviewStatus(null, null, currentSummaryId, questionListForTitleResult.rowCount, targetChannelList);
             questionNumber = parseInt(questionListForTitleResult.rowCount - 1 );
             text = text + '\n' + questionListForTitleResult.rows[questionNumber].title_number + '. *' + questionListForTitleResult.rows[questionNumber].title + '* \n';
             text = text + '```\n        ' + questionListForTitleResult.rows[questionNumber].title_number +'-' + questionListForTitleResult.rows[questionNumber].question_number +'. ' + questionListForTitleResult.rows[questionNumber].question + '\n```';
             util.botSay(text, channelId);
-            util.updateReviewStatus(null, null, null, questionNumber, targetChannelList);
+            util.updateReviewStatus(null, null, currentSummaryId, questionNumber, targetChannelList);
         } else {
             let judge = false;
             if (message.text.match(/OK/i) && message.text.match(/NG/i)) {

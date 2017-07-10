@@ -7,7 +7,7 @@ let conString = process.env.connectionstring;
 let bot;
 let message;
 let client;
-exports.joinChannel = function(bBot, bMessage) {
+exports.joinChannel = function(bBot, bMessage, targetChannelList) {
     bot = bBot;
     message = bMessage;
     client = new pg.Client(conString);
@@ -19,26 +19,15 @@ exports.joinChannel = function(bBot, bMessage) {
         async.series([
             function (callback) {
                 // 登録するチャンネルがDBに存在するか確認
-                let selectChannel = config.sql.channel.format(channelId);
-                client.query(selectChannel, function(err, resultChannel) {
-                    if(err) {
-                        throw err;
-                    }
-                    if (resultChannel.rowCount == 0) {
-                        // チャンネルが存在しない場合は、チャンネルを追加
-                        bot.api.channels.info({'channel': message.channel}, (err, res) => {
-                            let insertChannel = config.sql.insert.channel.format(channelId, res.channel.name)
-                            client.query(insertChannel, function(err, result) {
-                                if(err) {
-                                    throw err;
-                                }
-                                insertAccountInfo(res.channel);
-                                callback(null, '');
-                            });
-                        });
-                    } else {
-                        insertAccountInfo();
-                    }
+                bot.api.channels.info({'channel': message.channel}, (err, res) => {
+                    let insertChannel = config.sql.insert.channel.format(channelId, res.channel.name)
+                    client.query(insertChannel, function(err, result) {
+                        if(err) {
+                            throw err;
+                        }
+                        insertAccountInfo(res.channel);
+                        callback(null, '');
+                    });
                 });
             },
             function (callback) {
@@ -56,9 +45,39 @@ exports.joinChannel = function(bBot, bMessage) {
                     if(err) {
                         throw err;
                     }
+                    callback(null, '');
                 });
             }
-        ]);
+        ], function (err, results) {
+            if (err) {
+                throw err;
+            }
+            let selectChannels = config.sql.channels;
+            client.query(selectChannels, (err, channelsResult) => {
+                if (err) {
+                    console.log(err)
+                    client.end();
+                    return;
+                }
+                channelsResult.rows.forEach((channelInfo, index, array) => {
+                    targetChannelList.push(channelInfo.channel_id);
+                });
+            });
+        });
+    });
+};
+
+exports.accountJoin = function(bBot, bMessage) {
+    bot = bBot;
+    message = bMessage;
+    client = new pg.Client(conString);
+    client.connect((err, client) => {
+        if(err) {
+            throw err;
+        }
+        bot.api.channels.info({'channel': message.channel}, (err, res) => {
+            insertAccountInfo(res.channel);
+        });
     });
 };
 
@@ -143,18 +162,3 @@ function insertAccountInfo(channelInfo) {
         ]);
     });
 }
-
-exports.accountJoin = function(bBot, bMessage) {
-    bot = bBot;
-    message = bMessage;
-    client = new pg.Client(conString);
-    client.connect((err, client) => {
-        if(err) {
-            throw err;
-        }
-        bot.api.channels.info({'channel': message.channel}, (err, res) => {
-            insertAccountInfo(res.channel);
-        });
-    });
-};
-

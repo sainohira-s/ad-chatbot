@@ -66,7 +66,6 @@ let cancelController = require('./controller/cancel.js').CANCEL;
 cancelController.startController(connectionString, controller);
 controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
     // SQLクエリに影響する文字列を置換
-
     message.text = message.text.replace(/'/g,"''");
     let channelId = message.channel;
     let accountId = message.user;
@@ -95,7 +94,7 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
             if (statusResult.rowCount){
                 // 現在のステータスにより処理を分ける
                 switch (statusResult.rows[0].current_type_id) {
-                case 1:
+                case config.messageType.message.id:
                     // ノンステータス
                     let selectMessage = config.sql.messageSearch.format(message.text)
                     client.query(selectMessage, (err, resultMessage) => {
@@ -182,7 +181,7 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
 });
 
 controller.hears('',['bot_channel_join'],function(bot, message) {
-    botPlacement.joinChannel(bot, message);
+    botPlacement.joinChannel(bot, message, targetChannelList);
 });
 
 controller.hears('',['user_channel_join'],function(bot, message) {
