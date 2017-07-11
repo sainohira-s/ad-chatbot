@@ -144,18 +144,20 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                             util.botSay('(んー、なんと答えるのがべきなのか...。。:disappointed_relieved:)\n端的に話してくれると嬉しいな！', message.channel);
                             client.end();
                         } else {
-                            request({
-                                url: 'https://api.a3rt.recruit-tech.co.jp/talk/v1/smalltalk',
-                                method: 'POST',
-                                form: { apikey: process.env.a3rt_talk_apikey, query: message.text },
-                                json:  true
-                            }, (err, response, body) => {
-                                if (body.status == 0) {
-                                    bot.reply(message, `${body.results[0].reply}`);
-                                } else {
-                                    util.errorBotSay(`TalkAPI ERROR: ${err}`)
-                                }
-                            });
+                            if (message.event != 'ambient') {
+                                request({
+                                    url: 'https://api.a3rt.recruit-tech.co.jp/talk/v1/smalltalk',
+                                    method: 'POST',
+                                    form: { apikey: process.env.a3rt_talk_apikey, query: message.text },
+                                    json:  true
+                                }, (err, response, body) => {
+                                    if (body.status == 0) {
+                                        bot.reply(message, `${body.results[0].reply}`);
+                                    } else {
+                                        util.errorBotSay(`TalkAPI ERROR: ${err}`)
+                                    }
+                                });
+                            }
                             client.end();
                         }
                     });
