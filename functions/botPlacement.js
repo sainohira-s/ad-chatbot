@@ -138,7 +138,7 @@ function insertAccountInfo(channelInfo) {
                                 }
                             });
                         }
-                    });                
+                    });
                 });
             },
             function (callback) {

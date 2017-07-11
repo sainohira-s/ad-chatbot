@@ -15,6 +15,15 @@ let controller = Botkit.slackbot({
     debug: true,
 });
 
+// function定義ファイルの読み込み
+let util = require('./functions/utility.js').UTIL;
+let selfMsg = require('./functions/selfishMessage.js');
+let review = require('./functions/review.js').REVIEW;
+let reviewCheck = require('./functions/review_check.js').REVIEWCHECK;
+let reviewList = require('./functions/review_list.js').REVIEWLIST;
+let scMsg = require('./functions/scheduleMessage.js');
+let botPlacement = require('./functions/botPlacement.js');
+
 let bot = controller.spawn({
     token: process.env.token
 }).startRTM(function(err, bot, payload){
@@ -26,15 +35,6 @@ let bot = controller.spawn({
 
 // 各班ごとに受け取ったワードを一時的に格納するディレクトリ
 let channelWordDir = {}
-
-// function定義ファイルの読み込み
-let util = require('./functions/utility.js').UTIL;
-var selfMsg = require('./functions/selfishMessage.js');
-let review = require('./functions/review.js').REVIEW;
-let reviewCheck = require('./functions/review_check.js').REVIEWCHECK;
-let reviewList = require('./functions/review_list.js').REVIEWLIST;
-var scMsg = require('./functions/scheduleMessage.js');
-var botPlacement = require('./functions/botPlacement.js');
 
 // PostgreSQL
 let connectionString = process.env.connectionstring;

@@ -130,7 +130,7 @@ function formatReviewListForAccountChannel(statusResult, summaryResult, bot_mess
                         });
                     });
                     userNames = (userNames)?'(' + userNames.substr(0, userNames.length-2) + ')':'';
-                    let flagText = (userPassingSummaryFlag)?':white_check_mark:':':white_large_square:'            
+                    let flagText = (userPassingSummaryFlag)?':white_check_mark:':':white_large_square:'
                     text = text + '\n ' + flagText + '  '+ summaryInfo.id + '.  *' + summaryInfo.summary + '*  ' + userNames;
                 });
                 text = text + '\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'

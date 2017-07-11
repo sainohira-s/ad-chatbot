@@ -57,14 +57,13 @@ MAIN.startController = function startController(cConnectionString, cController) 
             if (targetChannelList.indexOf(channelId) == -1) {
                 selectStatus = config.sql.accountChannelStatus.format(accountId);
             }
-
             client.query(selectStatus, (err, result) => {
                 if (err) {
                     util.errorBotSay('キャンセル時のステータス確認時にエラー発生: ' + err)
                     client.end();
                     return;
                 }
-                if (result.rows[0].current_type_id == 0 && result.rows[0].stage == 0) {
+                if (result.rows[0].current_type_id == 1 && result.rows[0].stage == 0) {
                     // 処理の途中ではない場合
                     if (message.event != 'ambient') {
                         util.botSay('んー、そう言われても..。 :droplet:', channelId)

@@ -297,7 +297,7 @@ function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent
                             });
                         // 既に合格している場合                                    
                         } else {
-                            util.botSay('`'+ questionListResult.rows[0].summary + '` は既に合格していますね。レビュアーと班員への通知は不要ですね。', channelId);
+                            util.botSay(text + '所属されている班では `'+ questionListResult.rows[0].summary + '` は既に合格しているので、レビュアーと班員への通知は不要ですね。', channelId);
                             client.end();
                             return;
                         }
