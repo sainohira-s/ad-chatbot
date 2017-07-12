@@ -144,7 +144,7 @@ function indicateQuestion(summaryResult, accountChannelStatusResult, channelId) 
                     channelWordDic[channelId] = '';
                     util.updateStatus(1, 1, targetChannelList);
                     util.updateReviewStatus(null, null, 0, 0, targetChannelList);
-                    updateReviewSummaryResult(accountChannelStatusResult, channelId, currentSummaryId, false);
+                    MAIN.updateReviewSummaryResult(accountChannelStatusResult, channelId, currentSummaryId, false);
                     return;
                 }
                 if (questionNumber == questionListForTitleResult.rowCount -1) {
@@ -206,7 +206,7 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                         channelPassingQuestionList = accountStatusInfo.c_passing_question;
                     }
                 });
-
+                
                 // サマリーに該当する全質問のリストを生成
                 let questionList = [];
                 let allOkFlag = true;
@@ -340,7 +340,6 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                             return;
                         }
                     }
-                    
                 } else {
                     //　不合格項目がある場合
                     let questionInfoList = questionListResult.rows
@@ -382,8 +381,9 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                     let channelPassingSummary = channelPassingSummaryList.indexOf(`${summaryIdStr}`)
                     // 既に合格していた場合(個人)
                     if (accountChannelPassingSummary >= 0) {
-                        accountPassingSummaryList.splice(channelPassingSummary, 1)
+                        accountPassingSummaryList.splice(accountChannelPassingSummary, 1)
                         let setPhraseForReviewChannelStatus = `passing_summary = ARRAY[${accountPassingSummaryList}]` 
+                        console.log(setPhraseForReviewChannelStatus)
                         let updateAccountChannelStatus = config.sql.review.update.accountChannelStatus.format(setPhraseForReviewChannelStatus, accountChannelId, message.user);
                         client.query(updateAccountChannelStatus, (err, result) => {
                             if(err) {
@@ -425,6 +425,8 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                                 return;
                             }
                         });
+                    } else {
+                        util.botSay(text, channelId)
                     }
                 }
             });

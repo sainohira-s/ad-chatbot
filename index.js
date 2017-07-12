@@ -34,7 +34,7 @@ let bot = controller.spawn({
 });
 
 // 各班ごとに受け取ったワードを一時的に格納するディレクトリ
-let channelWordDir = {}
+let channelWordDic = {}
 
 // PostgreSQL
 let connectionString = process.env.connectionstring;
@@ -63,7 +63,7 @@ client.connect((err) => {
 
 // controller定義ファイルの読み込み
 let cancelController = require('./controller/cancel.js').CANCEL;
-cancelController.startController(connectionString, controller, channelWordDir);
+cancelController.startController(connectionString, controller, channelWordDic);
 controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
     // SQLクエリに影響する文字列を置換
     message.text = message.text.replace(/'/g,"''");
@@ -118,7 +118,7 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                                 // レビュー一覧に関する対話が発生している場合
                                 if (message.event != 'ambient') {
                                     util.updateStatus(2, 2, targetChannelList);
-                                    reviewList.setProperty(bot, message, client, channelWordDir, targetChannelList)
+                                    reviewList.setProperty(bot, message, client, channelWordDic, targetChannelList)
                                     review.reviewProcess(message, statusResult, channelId, resultMessage.rows[0].message[0])
                                 } else {
                                     util.botSay('メンションもしくは、ダイレクトメッセージから始めてください。', message.channel);
@@ -128,8 +128,8 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                                 // レビューチェックの対話がしている場合
                                 if (message.event == 'direct_message') {
                                     util.updateStatus(3, 3, targetChannelList);
-                                    reviewList.setProperty(bot, message, client, channelWordDir, targetChannelList)
-                                    reviewCheck.setProperty(bot, message, client, channelWordDir, targetChannelList)
+                                    reviewList.setProperty(bot, message, client, channelWordDic, targetChannelList)
+                                    reviewCheck.setProperty(bot, message, client, channelWordDic, targetChannelList)
                                     review.reviewProcess(message, statusResult, channelId, resultMessage.rows[0].message[0])
                                 } else {
                                     util.botSay('ダイレクトメッセージからのみ利用可能です。', message.channel);
@@ -168,13 +168,13 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                     break;
                 case config.messageType.selfReviewList.id:
                     // レビューリスト確認機能操作中ステータス
-                    reviewList.setProperty(bot, message, client, channelWordDir, targetChannelList)
+                    reviewList.setProperty(bot, message, client, channelWordDic, targetChannelList)
                     review.reviewProcess(message, statusResult, channelId, null)
                     break;
                 case config.messageType.selfReviewCheck.id:
                     // レビューチェック開始
-                    reviewList.setProperty(bot, message, client, channelWordDir, targetChannelList)
-                    reviewCheck.setProperty(bot, message, client, channelWordDir, targetChannelList)
+                    reviewList.setProperty(bot, message, client, channelWordDic, targetChannelList)
+                    reviewCheck.setProperty(bot, message, client, channelWordDic, targetChannelList)
                     review.reviewProcess(message, statusResult, channelId, null)
                     break;
                 default: 
