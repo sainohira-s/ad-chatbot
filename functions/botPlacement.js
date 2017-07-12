@@ -122,19 +122,19 @@ function insertAccountInfo(channelInfo) {
     });
 }
 
-function insertChannelCompositionRelation(uuid, channelInfo, memberId) {
-    let insertChannelComposition = config.sql.insert.channelComposition.format(uuid, channelInfo.id, memberId)
+function insertChannelCompositionRelation(uuidStr, channelInfo, memberId) {
+    let insertChannelComposition = config.sql.insert.channelComposition.format(uuidStr, channelInfo.id, memberId)
     client.query(insertChannelComposition, (err, result) => {
         if(err) {
             throw err;
         }
-        let insertAccountChannelStatus = config.sql.insert.accountChannelStatus.format(uuid)
+        let insertAccountChannelStatus = config.sql.insert.accountChannelStatus.format(uuidStr)
         client.query(insertAccountChannelStatus, (err, result) => {
             if(err) {
                 throw err;
             }
         });
-        let insertReviewAccountChannelStatus = config.sql.insert.reviewAccountChannelStatus.format(uuid)
+        let insertReviewAccountChannelStatus = config.sql.insert.reviewAccountChannelStatus.format(uuidStr)
         client.query(insertReviewAccountChannelStatus, (err, result) => {
             if(err) {
                 throw err;
