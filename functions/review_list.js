@@ -324,7 +324,6 @@ function sendReviewSummaryListAll (message) {
                     text = text + '\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
                     if ((channelStatusForReviewerResult.rowCount - 1)  == index) {
                         util.botSay(text, message.channel);
-                        client.end();
                     }
                     util.updateStatus(1, 1, targetChannelList);
                 });
