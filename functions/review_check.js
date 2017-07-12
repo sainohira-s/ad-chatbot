@@ -52,7 +52,7 @@ MAIN.reviewCheck = function reviewCheck(channelId, statusResult) {
                         channelWordDic[channelId] = 'NG';
                     }
                     
-                    if (!summaryResult.rowCount){
+                    if (summaryResult.rowCount == 0){
                         util.botSay('1つの項目を選択してください。', channelId);
                         return;
                     } else if (summaryResult.rowCount > 1){
@@ -286,7 +286,7 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                                             client.end();
                                             return;
                                         }
-                                        if (resultChanelFromReviewerFlg.rowCount >= 0) {
+                                        if (resultChanelFromReviewerFlg.rowCount > 0) {
                                             resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
                                                 util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', channelInfo.channel_id);
                                             });
@@ -410,7 +410,7 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                                             client.end();
                                             return;
                                         }
-                                        if (resultChanelFromReviewerFlg.rowCount >= 0) {
+                                        if (resultChanelFromReviewerFlg.rowCount > 0) {
                                             resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) => {
                                                 util.botSay(text + '\n' + accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェック(個人)で不合格がでたため【合格 → 不合格】になりました。', channelInfo.channel_id)
                                             });
@@ -467,7 +467,7 @@ function updateChannelPassingSummary(channelId, accountChannelId, accountChannel
                 client.end();
                 return;
             }
-            if (resultChanelFromReviewerFlg.rowCount >= 0) {
+            if (resultChanelFromReviewerFlg.rowCount > 0) {
                 resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) => {
                     util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', channelInfo.channel_id);
                 });

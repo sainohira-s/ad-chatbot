@@ -7,7 +7,8 @@ var conString = process.env.connectionstring;
 var channelsList;
 
 exports.says = function(bot) {
-    pg.connect(conString, function(err, client) {
+    let client = new pg.Client(conString);
+    client.connect((err) => {
         if(err) {
             console.log('[scheduleMessage]DB connected failed.', err);
             return;
@@ -20,26 +21,35 @@ exports.says = function(bot) {
                 return;
             }
             if(resultSchedule.rowCount > 0){
-                client.query(config.sql.channels, function(err, resultChannel) {
-                    if(err) {
-                        console.log('[scheduleMessage]error running ChannelList query.', err);
-                        client.end()
-                        return;
-                    }
-                    channelsList = resultChannel;
-                    for(var i=0; i<resultSchedule.rowCount; i++){
-                        new schedule.scheduleJob(resultSchedule.rows[i].message[0], resultSchedule.rows[i].keyword, function(){
-                            for(var j=0; j<channelsList.rowCount; j++){
-                                bot.say({
-                                    channel: channelsList.rows[j].name,
-                                    text: this.name,
-                                    username: '',
-                                    icon_url: ''
-                                });
+                for(var i=0; i<resultSchedule.rowCount; i++){
+                    new schedule.scheduleJob(resultSchedule.rows[i].message[0], resultSchedule.rows[i].keyword, function(){
+                        let text = this.name;
+                        let clientSche = new pg.Client(conString);
+                        clientSche.connect((err) => {
+                            if(err) {
+                                console.log('[scheduleMessage]DB connected failed.', err);
+                                return;
                             }
+                            clientSche.query(config.sql.channels, function(err, resultChannel) {
+                                if(err) {
+                                    console.log('[scheduleMessage]error running ChannelList query.', err);
+                                    client.end()
+                                    return;
+                                }
+                                for(var j=0; j<resultChannel.rowCount; j++){
+                                    bot.say({
+                                        channel: resultChannel.rows[j].name,
+                                        text: text,
+                                        username: '',
+                                        icon_url: ''
+                                    });
+                                }
+                                clientSche.end();
+                            });
+                            
                         });
-                    }
-                });
+                    });
+                }
             }
             client.end()
             return;

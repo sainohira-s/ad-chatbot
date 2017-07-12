@@ -91,7 +91,7 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                 client.end();
                 return;
             }
-            if (statusResult.rowCount){
+            if (statusResult.rowCount > 0){
                 // 現在のステータスにより処理を分ける
                 switch (statusResult.rows[0].current_type_id) {
                 case config.messageType.message.id:
@@ -182,7 +182,6 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                 }
             }
         });
-
     });
 });
 

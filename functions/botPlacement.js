@@ -15,13 +15,14 @@ exports.joinChannel = function(bBot, bMessage, targetChannelList) {
         if(err) {
             throw err;
         }
+
         let channelId = message.channel
         async.series([
-            function (callback) {
+            (callback) => {
                 // 登録するチャンネルがDBに存在するか確認
                 bot.api.channels.info({'channel': message.channel}, (err, res) => {
                     let insertChannel = config.sql.insert.channel.format(channelId, res.channel.name)
-                    client.query(insertChannel, function(err, result) {
+                    client.query(insertChannel, (err, result) => {
                         if(err) {
                             throw err;
                         }
@@ -30,18 +31,18 @@ exports.joinChannel = function(bBot, bMessage, targetChannelList) {
                     });
                 });
             },
-            function (callback) {
+            (callback) => {
                 let insertChannelStatus = config.sql.insert.channelStatus.format(channelId)
-                client.query(insertChannelStatus, function(err, result) {
+                client.query(insertChannelStatus, (err, result) => {
                     if(err) {
                         throw err;
                     }
                     callback(null, '');
                 });
             },
-            function (callback) {
+            (callback) => {
                 let insertReviewChannelStatus = config.sql.insert.reviewChannelStatus.format(channelId)
-                client.query(insertReviewChannelStatus, function(err, result) {
+                client.query(insertReviewChannelStatus, (err, result) => {
                     if(err) {
                         throw err;
                     }
@@ -86,10 +87,10 @@ function insertAccountInfo(channelInfo) {
     let uuid;
     channelInfo.members.forEach((memberId, index) => {
         async.series([
-            function (callback) {
+            (callback) => {
                 // 登録するアカウントがDBに存在するか確認
                 let selectChannelComposition = config.sql.channelCompositionFromChannelIdAndAccountId.format(channelInfo.id, memberId)
-                client.query(selectChannelComposition, function(err, resultChannelComposition) {  
+                client.query(selectChannelComposition, (err, resultChannelComposition) => {  
                     if(err) {
                         throw err;
                     }
@@ -98,10 +99,10 @@ function insertAccountInfo(channelInfo) {
                     }
                 });
             },
-            function (callback) {
-                bot.api.users.info({'user': memberId}, function(err, res){
+            (callback) => {
+                bot.api.users.info({'user': memberId}, (err, res) => {
                     let selectUuid = config.sql.uuid;
-                    client.query(selectUuid, function(err, resultUuid) {
+                    client.query(selectUuid, (err, resultUuid) => {
                         if(err) {
                             throw err;
                         }
@@ -109,56 +110,48 @@ function insertAccountInfo(channelInfo) {
                         // アカウントを登録する
                         if (!res.user.is_bot) {
                             let selectAccount = config.sql.accountFromAccountId.format(memberId)
-                            client.query(selectAccount, function(err, resultAccount) {
+                            client.query(selectAccount, (err, resultAccount) => {
                                 if(err) {
                                     throw err;
                                 }
                                 if (resultAccount.rowCount == 0) {
                                     let insertAccount = config.sql.insert.account.format(memberId, res.user.name)
-                                    client.query(insertAccount, function(err, result) {
+                                    client.query(insertAccount, (err, result) => {
                                         if(err) {
                                             throw err;
                                         }
-                                        let insertChannelComposition = config.sql.insert.channelComposition.format(uuid, channelInfo.id, memberId)
-                                        client.query(insertChannelComposition, function(err, result) {
-                                            if(err) {
-                                                throw err;
-                                            }
-                                            callback(null, '');
-                                        });
+                                        insertChannelCompositionRelation(uuid, channelInfo, memberId);
                                     });    
                                 } else {
-                                    let insertChannelComposition = config.sql.insert.channelComposition.format(uuid, channelInfo.id, memberId)
-                                    client.query(insertChannelComposition, function(err, result) {
-                                        if(err) {
-                                            throw err;
-                                        }
-                                        callback(null, '');
-                                    });
+                                    insertChannelCompositionRelation(uuid, channelInfo, memberId);
                                 }
                             });
                         }
                     });
                 });
-            },
-            function (callback) {
-                let insertAccountChannelStatus = config.sql.insert.accountChannelStatus.format(uuid)
-                client.query(insertAccountChannelStatus, function(err, result) {
-                    if(err) {
-                        throw err;
-                    }
-                    callback(null, '');
-                });
-            },
-            function (callback) {
-                let insertReviewAccountChannelStatus = config.sql.insert.reviewAccountChannelStatus.format(uuid)
-                client.query(insertReviewAccountChannelStatus, function(err, result) {
-                    if(err) {
-                        throw err;
-                    }
-                    callback(null, 'done');
-                });
             }
         ]);
+    });
+}
+
+// channel_composition関連テーブルへのInsert処理
+function insertChannelCompositionRelation(uuid, channelInfo, memberId) {
+    let insertChannelComposition = config.sql.insert.channelComposition.format(uuid, channelInfo.id, memberId);
+    client.query(insertChannelComposition, (err, result) => {
+        if(err) {
+            throw err;
+        }
+        let insertAccountChannelStatus = config.sql.insert.accountChannelStatus.format(uuid);
+        client.query(insertAccountChannelStatus, (err, result) => {
+            if(err) {
+                throw err;
+            }
+            let insertReviewAccountChannelStatus = config.sql.insert.reviewAccountChannelStatus.format(uuid);
+            client.query(insertReviewAccountChannelStatus, (err, result) => {
+                if(err) {
+                    throw err;
+                }
+            });
+        });
     });
 }
