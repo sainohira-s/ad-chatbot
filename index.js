@@ -12,7 +12,7 @@ let async = require('async');
 let request = require('request');
 
 let controller = Botkit.slackbot({
-    debug: true,
+    debug: false,
 });
 
 // function定義ファイルの読み込み
