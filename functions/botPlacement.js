@@ -87,59 +87,72 @@ exports.accountJoin = function(bBot, bMessage) {
 function insertAccountInfo(channelInfo) {
     let uuidStr;
     channelInfo.members.forEach((memberId, index) => {
-    // 登録するアカウントがDBに存在するか確認
-    let selectChannelComposition = config.sql.channelCompositionFromChannelIdAndAccountId.format(channelInfo.id, memberId)
-    client.query(selectChannelComposition, (err, resultChannelComposition) => {  
-        if(err) {
-            throw err;
-        }
-        if (resultChannelComposition.rowCount == 0) {
-            bot.api.users.info({'user': memberId}, (err, res) => {
-                uuidStr = uuid();
-                // アカウントを登録する
-                if (!res.user.is_bot) {
-                    let selectAccount = config.sql.accountFromAccountId.format(memberId)
-                    client.query(selectAccount, (err, resultAccount) => {
-                        if(err) {
-                            throw err;
-                        }
-                        if (resultAccount.rowCount == 0) {
-                            let insertAccount = config.sql.insert.account.format(memberId, res.user.name)
-                            client.query(insertAccount, (err, result) => {
-                                if(err) {
-                                    throw err;
-                                }
-                                insertChannelCompositionRelation(uuidStr, channelInfo, memberId);
-                            });
-                        } else {
-                            insertChannelCompositionRelation(uuidStr, channelInfo, memberId);
-                        }
-                    });
-                }
-            });
-        }
-    });
-    });
-}
-
-function insertChannelCompositionRelation(uuidStr, channelInfo, memberId) {
-    let insertChannelComposition = config.sql.insert.channelComposition.format(uuidStr, channelInfo.id, memberId)
-    client.query(insertChannelComposition, (err, result) => {
-        if(err) {
-            throw err;
-        }
-        let insertAccountChannelStatus = config.sql.insert.accountChannelStatus.format(uuidStr)
-        client.query(insertAccountChannelStatus, (err, result) => {
+        // 登録するアカウントがDBに存在するか確認
+        let selectChannelComposition = config.sql.channelCompositionFromChannelIdAndAccountId.format(channelInfo.id, memberId)
+        client.query(selectChannelComposition, (err, resultChannelComposition) => {  
             if(err) {
                 throw err;
             }
-        });
-        let insertReviewAccountChannelStatus = config.sql.insert.reviewAccountChannelStatus.format(uuidStr)
-        client.query(insertReviewAccountChannelStatus, (err, result) => {
-            if(err) {
-                throw err;
+            if (resultChannelComposition.rowCount == 0) {
+                bot.api.users.info({'user': memberId}, (err, res) => {
+                    uuidStr = uuid();
+                    // アカウントを登録する
+                    if (!res.user.is_bot) {
+                        let selectAccount = config.sql.accountFromAccountId.format(memberId)
+                        client.query(selectAccount, (err, resultAccount) => {
+                            if(err) {
+                                throw err;
+                            }
+                            if (resultAccount.rowCount == 0) {
+                                let insertAccount = config.sql.insert.account.format(memberId, res.user.name)
+                                client.query(insertAccount, (err, result) => {
+                                    if(err) {
+                                        throw err;
+                                    }
+                                    let insertChannelComposition = config.sql.insert.channelComposition.format(uuidStr, channelInfo.id, memberId)
+                                    client.query(insertChannelComposition, (err, result) => {
+                                        if(err) {
+                                            throw err;
+                                        }
+                                        let insertAccountChannelStatus = config.sql.insert.accountChannelStatus.format(uuidStr)
+                                        client.query(insertAccountChannelStatus, (err, result) => {
+                                            if(err) {
+                                                throw err;
+                                            }
+                                        });
+                                        let insertReviewAccountChannelStatus = config.sql.insert.reviewAccountChannelStatus.format(uuidStr)
+                                        client.query(insertReviewAccountChannelStatus, (err, result) => {
+                                            if(err) {
+                                                throw err;
+                                            }
+                                        });
+                                    });
+                                });
+                            } else {
+                                let insertChannelComposition = config.sql.insert.channelComposition.format(uuidStr, channelInfo.id, memberId)
+                                client.query(insertChannelComposition, (err, result) => {
+                                    if(err) {
+                                        throw err;
+                                    }
+                                    let insertAccountChannelStatus = config.sql.insert.accountChannelStatus.format(uuidStr)
+                                    client.query(insertAccountChannelStatus, (err, result) => {
+                                        if(err) {
+                                            throw err;
+                                        }
+                                    });
+                                    let insertReviewAccountChannelStatus = config.sql.insert.reviewAccountChannelStatus.format(uuidStr)
+                                    client.query(insertReviewAccountChannelStatus, (err, result) => {
+                                        if(err) {
+                                            throw err;
+                                        }
+                                    });
+                                });
+                            }
+                        });
+                    }
+                });
             }
         });
     });
-
 }
+

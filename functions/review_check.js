@@ -298,7 +298,7 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                                     client.end();
                                     return;
                                 });
-                            // 既に合格している場合                                    
+                            // 既に合格している場合
                             } else {
                                 util.botSay(text + '所属されている班では `'+ questionListResult.rows[0].summary + '` は既に合格しているので、レビュアーと班員への通知は不要ですね。', channelId);
                                 client.end();
@@ -361,10 +361,11 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                         return !(passingQuestionIdList.indexOf(questionId) >= 0)
                     });
                     text = text + '`' + questionListResult.rows[0].summary + '` のNGだった項目は以下のとおりです。\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n'
+                    let questionListStr = '';
                     questionInfoList.forEach((questionInfo) => {
                         if (nonPassingQuestionIdList.indexOf(questionInfo.question_id) >= 0) {
-                            if (!text.match(questionInfo.title)) {
-                                text = text + '\n\n ' + questionInfo.title_number + '. *' + questionInfo.title + '*'
+                            if (!questionListStr.match(questionInfo.title)) {
+                                questionListStr = questionListStr + '\n\n ' + questionInfo.title_number + '. *' + questionInfo.title + '*'
                             }
                             let flagText = ':white_large_square:'
                             let questionText = questionInfo.question
@@ -372,10 +373,10 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                                 questionText = questionText.replace(/\\n/g, '\n');
                                 questionText = questionText.replace(/→/g, '→');
                             }
-                            text = text + '\n        ' + flagText + '   ' + questionInfo.title_number +'-' + questionInfo.question_number +'. ' + questionText
+                            questionListStr = questionListStr + '\n        ' + flagText + '   ' + questionInfo.title_number +'-' + questionInfo.question_number +'. ' + questionText
                         }
                     });
-                    text = text + '\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+                    text = text + questionListStr + '\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
                     let accountChannelPassingSummary = accountPassingSummaryList.indexOf(`${summaryIdStr}`)
                     let channelPassingSummary = channelPassingSummaryList.indexOf(`${summaryIdStr}`)
