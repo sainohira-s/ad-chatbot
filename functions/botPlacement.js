@@ -2,6 +2,7 @@
 let config = require('config');
 let pg = require('pg');
 let async = require('async');
+let uuid = require('uuid/v4');
 
 let conString = process.env.connectionstring;
 let bot;
@@ -84,74 +85,61 @@ exports.accountJoin = function(bBot, bMessage) {
 
 // ユーザーを追加
 function insertAccountInfo(channelInfo) {
-    let uuid;
+    let uuidStr;
     channelInfo.members.forEach((memberId, index) => {
-        async.series([
-            (callback) => {
-                // 登録するアカウントがDBに存在するか確認
-                let selectChannelComposition = config.sql.channelCompositionFromChannelIdAndAccountId.format(channelInfo.id, memberId)
-                client.query(selectChannelComposition, (err, resultChannelComposition) => {  
-                    if(err) {
-                        throw err;
-                    }
-                    if (resultChannelComposition.rowCount == 0) {
-                        callback(null, '');
-                    }
-                });
-            },
-            (callback) => {
-                bot.api.users.info({'user': memberId}, (err, res) => {
-                    let selectUuid = config.sql.uuid;
-                    client.query(selectUuid, (err, resultUuid) => {
+    // 登録するアカウントがDBに存在するか確認
+    let selectChannelComposition = config.sql.channelCompositionFromChannelIdAndAccountId.format(channelInfo.id, memberId)
+    client.query(selectChannelComposition, (err, resultChannelComposition) => {  
+        if(err) {
+            throw err;
+        }
+        if (resultChannelComposition.rowCount == 0) {
+            bot.api.users.info({'user': memberId}, (err, res) => {
+                uuidStr = uuid();
+                // アカウントを登録する
+                if (!res.user.is_bot) {
+                    let selectAccount = config.sql.accountFromAccountId.format(memberId)
+                    client.query(selectAccount, (err, resultAccount) => {
                         if(err) {
                             throw err;
                         }
-                        uuid = resultUuid.rows[0].uuid_generate_v4;
-                        // アカウントを登録する
-                        if (!res.user.is_bot) {
-                            let selectAccount = config.sql.accountFromAccountId.format(memberId)
-                            client.query(selectAccount, (err, resultAccount) => {
+                        if (resultAccount.rowCount == 0) {
+                            let insertAccount = config.sql.insert.account.format(memberId, res.user.name)
+                            client.query(insertAccount, (err, result) => {
                                 if(err) {
                                     throw err;
                                 }
-                                if (resultAccount.rowCount == 0) {
-                                    let insertAccount = config.sql.insert.account.format(memberId, res.user.name)
-                                    client.query(insertAccount, (err, result) => {
-                                        if(err) {
-                                            throw err;
-                                        }
-                                        insertChannelCompositionRelation(uuid, channelInfo, memberId);
-                                    });    
-                                } else {
-                                    insertChannelCompositionRelation(uuid, channelInfo, memberId);
-                                }
+                                insertChannelCompositionRelation(uuidStr, channelInfo, memberId);
                             });
+                        } else {
+                            insertChannelCompositionRelation(uuidStr, channelInfo, memberId);
                         }
                     });
-                });
-            }
-        ]);
+                }
+            });
+        }
+    });
     });
 }
 
-// channel_composition関連テーブルへのInsert処理
 function insertChannelCompositionRelation(uuid, channelInfo, memberId) {
-    let insertChannelComposition = config.sql.insert.channelComposition.format(uuid, channelInfo.id, memberId);
+    let insertChannelComposition = config.sql.insert.channelComposition.format(uuid, channelInfo.id, memberId)
     client.query(insertChannelComposition, (err, result) => {
         if(err) {
             throw err;
         }
-        let insertAccountChannelStatus = config.sql.insert.accountChannelStatus.format(uuid);
+        let insertAccountChannelStatus = config.sql.insert.accountChannelStatus.format(uuid)
         client.query(insertAccountChannelStatus, (err, result) => {
             if(err) {
                 throw err;
             }
-            let insertReviewAccountChannelStatus = config.sql.insert.reviewAccountChannelStatus.format(uuid);
-            client.query(insertReviewAccountChannelStatus, (err, result) => {
-                if(err) {
-                    throw err;
-                }
-            });
+        });
+        let insertReviewAccountChannelStatus = config.sql.insert.reviewAccountChannelStatus.format(uuid)
+        client.query(insertReviewAccountChannelStatus, (err, result) => {
+            if(err) {
+                throw err;
+            }
         });
     });
+
 }
