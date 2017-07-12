@@ -15,7 +15,8 @@ DROP TABLE message;
 DROP TABLE message_type;
 
 -- generate UUIDを使用するためにEXTENSION追加
-CREATE EXTENSION pgcrypto;
+CREATE EXTENSION "pgcrypto";
+CREATE EXTENSION "uuid-ossp";
 
 -- メッセージ関連テーブル
 CREATE TABLE message_type (
@@ -131,18 +132,18 @@ CREATE TABLE review_account_channel_status (
     FOREIGN KEY (id) REFERENCES channel_composition (id)
 );
 
-GRANT SELECT, UPDATE, INSERT ON TABLE review_account_channel_status TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE review_channel_status TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE channel_status TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE account_channel_status TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE channel_composition TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE account TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE channel TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE review_question TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE review_title TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE review_summary_keyword TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE review_summary TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE review_Title_Category TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE keyword TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE message TO test;
-GRANT SELECT, UPDATE, INSERT ON TABLE message_type TO test;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE review_account_channel_status TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE review_channel_status TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE channel_status TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE account_channel_status TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE channel_composition TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE account TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE channel TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE review_question TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE review_title TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE review_summary_keyword TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE review_summary TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE review_Title_Category TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE keyword TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE message TO postgres;
+-- GRANT SELECT, UPDATE, INSERT ON TABLE message_type TO postgres;

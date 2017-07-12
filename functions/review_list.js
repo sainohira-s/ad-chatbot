@@ -158,7 +158,7 @@ MAIN.sendTitleReviewList = function sendTitleReviewList(channelId, statusResult)
             return;
         }
 
-        let passing_question;
+        let passingQuestion;
         if(targetChannelList.indexOf(message.channel) >= 0) {
             let selectChannelStatus = config.sql.review.channelStatus.format(message.channel);
             client.query(selectChannelStatus, function(err, channelStatusResult) {
@@ -167,8 +167,8 @@ MAIN.sendTitleReviewList = function sendTitleReviewList(channelId, statusResult)
                     client.end();
                     return;
                 }
-                passing_question = channelStatusResult.rows[0].passing_question;
-                formatQuestionList(channelId, questionListResult, passing_question);
+                passingQuestion = channelStatusResult.rows[0].passing_question;
+                formatQuestionList(channelId, questionListResult, passingQuestion);
             }); 
 
         } else {
@@ -180,8 +180,8 @@ MAIN.sendTitleReviewList = function sendTitleReviewList(channelId, statusResult)
                     return;
                 }
                 if (accountChannelReviewStatusResult.rowCount == 1) {
-                    passing_question = accountChannelReviewStatusResult.rows[0].passing_question;
-                    formatQuestionList(channelId, questionListResult, passing_question);
+                    passingQuestion = accountChannelReviewStatusResult.rows[0].passing_question;
+                    formatQuestionList(channelId, questionListResult, passingQuestion);
                 } else {
                     //複数の班に所属していた場合
                 }
@@ -190,13 +190,14 @@ MAIN.sendTitleReviewList = function sendTitleReviewList(channelId, statusResult)
     });
 }
 
-function formatQuestionList(channelId, questionListResult, passing_question) {
+function formatQuestionList(channelId, questionListResult, passingQuestion) {
     // 一致する項目がない場合
     if (!questionListResult.rowCount) {
         util.botSay('その内容と一致する項目は見当たらないため、もう一度入力をお願いします:bow:', message.channel);
         client.end();
         return;
     }
+
     let summaryId = questionListResult.rows[0].summary_id;
     // 複数の項目が選択されていた場合
     for (let i in questionListResult.rows) {
@@ -207,8 +208,7 @@ function formatQuestionList(channelId, questionListResult, passing_question) {
         }
     }
     let useQuestionList = questionListResult.rows;
-    let allPassingQuestionList = passing_question;
-    let passingQuestionList = allPassingQuestionList.filter((question, index, array) => {
+    let passingQuestionList = passingQuestion.filter((question, index, array) => {
         return (question.match(`${summaryId}_`))
     });
     // サマリーに該当する全質問のリストを生成
@@ -219,7 +219,7 @@ function formatQuestionList(channelId, questionListResult, passing_question) {
     })
 
     let notPassingQuestionList = questionList.concat();
-    allPassingQuestionList.forEach((question, index) => {
+    passingQuestion.forEach((question, index) => {
         let questionIndex = useQuestionList.indexOf(question)
         if (questionIndex >= 0) {
             notPassingQuestionList.splice(questionIndex, 1)
@@ -231,6 +231,7 @@ function formatQuestionList(channelId, questionListResult, passing_question) {
     questionListResult.rows.forEach((questionInfo, index) => {
         // 合格した項目かチェック
         let showQuestionFlag = false
+
         passingQuestionList.forEach((question, index) => {
             let questionId = question.replace(`${summaryId}_`, '')
             if (questionInfo.question_id == questionId) {
@@ -238,14 +239,17 @@ function formatQuestionList(channelId, questionListResult, passing_question) {
                 return;
             }
         });
-
-        let flagText = ':white_large_square:';
+        
+        let flagText = '';
         let flagStrike = '';
-        if (showQuestionFlag) {
-            flagText = ':white_check_mark:';
-            flagStrike = '~';
+        if (targetChannelList.indexOf(message.channel) == -1) {
+            flagText = ':white_large_square:';
+            if (showQuestionFlag) {
+                flagText = ':white_check_mark:';
+                flagStrike = '~';
+            }
         }
-
+        
         let question_text = questionInfo.question;
         if ( question_text.match(/\\n/)) {
             question_text = question_text.replace(/\\n/g, flagStrike + '\n');
@@ -319,9 +323,10 @@ function sendReviewSummaryListAll (message) {
                     })
                     text = text + '\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
                     if ((channelStatusForReviewerResult.rowCount - 1)  == index) {
-                        util.botSay(text, message.user);
+                        util.botSay(text, message.channel);
                         client.end();
                     }
+                    util.updateStatus(1, 1, targetChannelList);
                 });
             })
         });

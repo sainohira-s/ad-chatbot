@@ -63,7 +63,7 @@ client.connect((err) => {
 
 // controller定義ファイルの読み込み
 let cancelController = require('./controller/cancel.js').CANCEL;
-cancelController.startController(connectionString, controller);
+cancelController.startController(connectionString, controller, channelWordDir);
 controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
     // SQLクエリに影響する文字列を置換
     message.text = message.text.replace(/'/g,"''");
@@ -116,9 +116,13 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                                 break;
                             case config.messageType.selfReviewList.id:
                                 // レビュー一覧に関する対話が発生している場合
-                                util.updateStatus(2, 2, targetChannelList);
-                                reviewList.setProperty(bot, message, client, channelWordDir, targetChannelList)
-                                review.reviewProcess(message, statusResult, channelId, resultMessage.rows[0].message[0])
+                                if (message.event != 'ambient') {
+                                    util.updateStatus(2, 2, targetChannelList);
+                                    reviewList.setProperty(bot, message, client, channelWordDir, targetChannelList)
+                                    review.reviewProcess(message, statusResult, channelId, resultMessage.rows[0].message[0])
+                                } else {
+                                    util.botSay('メンションもしくは、ダイレクトメッセージから始めてください。', message.channel);
+                                }
                                 break;
                             case config.messageType.selfReviewCheck.id:
                                 // レビューチェックの対話がしている場合

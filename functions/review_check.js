@@ -23,7 +23,7 @@ MAIN.setProperty = function setProperty(slackBot, recieveMessage, pgClient, rCha
 MAIN.reviewCheck = function reviewCheck(channelId, statusResult) {
     if (targetChannelList.indexOf(channelId) == -1) {
         let selectAccountChannelStatus = config.sql.review.accountChannelStatusFromAccountId.format(message.user)
-        client.query(selectAccountChannelStatus, function(err, accountChannelStatusResult) {
+        client.query(selectAccountChannelStatus, (err, accountChannelStatusResult) => {
             if (err) {
                 util.errorBotSay('レビューチェック実施(レビューステータス取得)時のデータ取得時にエラー発生: ' + err);
                 client.end();
@@ -38,7 +38,7 @@ MAIN.reviewCheck = function reviewCheck(channelId, statusResult) {
             } else {
                 selectSummay = config.sql.review.summaryFromId.format(currentSummaryId)
             }
-            client.query(selectSummay, function(err, summaryResult) {
+            client.query(selectSummay, (err, summaryResult) => {
                 if (err) {
                     util.errorBotSay('レビューチェック実施(サマリー取得)時のデータ取得時にエラー発生: ' + err);
                     client.end();
@@ -85,7 +85,7 @@ function indicateQuestion(summaryResult, accountChannelStatusResult, channelId) 
     } else if (channelWordDic[channelId] == 'NG') {
         selectQuestionListForTitle = config.sql.review.ngQuestionListForTitle.format(currentCategotyId, passingQuestionIdList);
     }
-    client.query(selectQuestionListForTitle, function(err, questionListForTitleResult) {
+    client.query(selectQuestionListForTitle, (err, questionListForTitleResult) => {
         if(err) {
             util.errorBotSay('レビューチェック実施(質問一覧取得)時のデータ取得時にエラー発生: ' + err);
             client.end();
@@ -144,7 +144,7 @@ function indicateQuestion(summaryResult, accountChannelStatusResult, channelId) 
                     channelWordDic[channelId] = '';
                     util.updateStatus(1, 1, targetChannelList);
                     util.updateReviewStatus(null, null, 0, 0, targetChannelList);
-                    updateReviewSummaryResult(accountChannelStatusResult, channelId, currentSummaryId, channelId);
+                    updateReviewSummaryResult(accountChannelStatusResult, channelId, currentSummaryId, false);
                     return;
                 }
                 if (questionNumber == questionListForTitleResult.rowCount -1) {
@@ -161,7 +161,7 @@ function indicateQuestion(summaryResult, accountChannelStatusResult, channelId) 
     });
 }
 
-function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent_channel) {
+MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, isCancel) {
     let selectChannelStatus = config.sql.review.accountChannelStatusFromAccountId.format(message.user)
     client.query(selectChannelStatus, (err, statusResult) => {
         if(err) {
@@ -170,7 +170,7 @@ function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent
             return;
         }
         let selectQuestionListFromSummaryId = config.sql.review.questionListFromSummaryId.format(summaryId)
-        client.query(selectQuestionListFromSummaryId, function(err, questionListResult) { 
+        client.query(selectQuestionListFromSummaryId, (err, questionListResult) => {
             if(err) {
                 util.errorBotSay('レビューサマリーアップデート時の質問リスト取得時にエラー発生: ' + err);
                 client.end();
@@ -179,7 +179,7 @@ function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent
             let text = 'セルフレビューチェック終了です。お疲れ様でした。\n'
             // 全ユーザーの情報(ステータス)を取得
             let selectSummaryAndQuestionListFromAccountId = config.sql.review.summaryAndQuestionListFromAccountId.format(oldStatusResult.rows[0].channel_id)
-            client.query(selectSummaryAndQuestionListFromAccountId, function(err, summaryAndQuestionListResult) {
+            client.query(selectSummaryAndQuestionListFromAccountId, (err, summaryAndQuestionListResult) => {
                 if(err) {
                     util.errorBotSay('ユーザーのステータス更新時のユーザーステータス取得時にエラー発生: ' + err);
                     client.end();
@@ -226,7 +226,7 @@ function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent
                     }
                     let setPhrase = `passing_summary = ARRAY[${accountPassingSummaryList}]`
                     let updatePassingSummary = config.sql.review.update.accountChannelStatus.format(setPhrase, oldStatusResult.rows[0].channel_id, message.user)
-                    client.query(updatePassingSummary, function(err, result) {
+                    client.query(updatePassingSummary, (err, result) => {
                         if(err) {
                             util.errorBotSay('レビューサマリー更新時にエラー発生: ' + err);
                             client.end();
@@ -247,96 +247,100 @@ function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent
                         }
                     });
 
-                    if (allPassingFlag) {
-                        // 班全員が合格場合
-                        if (channelPassingSummaryList.indexOf(`${summaryIdStr}`) == -1) {
-                            // 班のステータスが合格状態でない場合
-                            // 合格したサマリーを更新するためのリストを生成
-                            channelPassingSummaryList.push(summaryId)
-                            
-                            // ユーザーの回答を元にチャンネルのレビュー合格ステータスを更新
-                            // 指定されたサマリーに該当する合格項目を抽出
-                            let passingQuestionListForSummary = accountPassingQuestionList.filter(function(passingQuestion, index, array) {
-                                return passingQuestion.match(`${summaryId}_`);
-                            });
-                            // チャンネルの合格ステータスに存在しない項目を追加
-                            passingQuestionListForSummary.forEach((passingQuestion, index) => {
-                                if (channelPassingQuestionList.indexOf(passingQuestion) == -1) {
-                                    channelPassingQuestionList.push(passingQuestion);
-                                }
-                            });
-                            let passingQuestionListStr = fromArrayToString(channelPassingQuestionList);
+                    if (isCancel) {
+                        return;
+                    } else {
+                        if (allPassingFlag) {
+                            // 班全員が合格場合
+                            if (channelPassingSummaryList.indexOf(`${summaryIdStr}`) == -1) {
+                                // 班のステータスが合格状態でない場合
+                                // 合格したサマリーを更新するためのリストを生成
+                                channelPassingSummaryList.push(summaryId)
+                                
+                                // ユーザーの回答を元にチャンネルのレビュー合格ステータスを更新
+                                // 指定されたサマリーに該当する合格項目を抽出
+                                let passingQuestionListForSummary = accountPassingQuestionList.filter((passingQuestion, index, array) => {
+                                    return passingQuestion.match(`${summaryId}_`);
+                                });
+                                // チャンネルの合格ステータスに存在しない項目を追加
+                                passingQuestionListForSummary.forEach((passingQuestion, index) => {
+                                    if (channelPassingQuestionList.indexOf(passingQuestion) == -1) {
+                                        channelPassingQuestionList.push(passingQuestion);
+                                    }
+                                });
+                                let passingQuestionListStr = fromArrayToString(channelPassingQuestionList);
 
-                            let setPhraseForReviewChannelStatus = `passing_summary = ARRAY[${channelPassingSummaryList}]`
-                            // 班のチャンネルのステータスを合格へ更新する
-                            let updateReviewChannelStatus = config.sql.review.update.channelStatus.format(setPhraseForReviewChannelStatus, accountChannelId);
-                            client.query(updateReviewChannelStatus, function(err, result) {
-                                if(err) {
-                                    util.errorBotSay('ユーザーのステータス更新時の全ユーザーステータス取得時にエラー発生: ' + err);
-                                    client.end();
-                                    return;
-                                }
-                                let selectChanelFromReviewerFlg = config.sql.channelFromReviewerFlg.format('true')
-                                client.query(selectChanelFromReviewerFlg, function(err, resultChanelFromReviewerFlg) {
+                                let setPhraseForReviewChannelStatus = `passing_summary = ARRAY[${channelPassingSummaryList}]`
+                                // 班のチャンネルのステータスを合格へ更新する
+                                let updateReviewChannelStatus = config.sql.review.update.channelStatus.format(setPhraseForReviewChannelStatus, accountChannelId);
+                                client.query(updateReviewChannelStatus, (err, result) => {
                                     if(err) {
-                                        util.errorBotSay('レビューアーへ通知処理(レビュー完了)時にエラー発生: ' + err);
+                                        util.errorBotSay('ユーザーのステータス更新時の全ユーザーステータス取得時にエラー発生: ' + err);
                                         client.end();
                                         return;
                                     }
-                                    if (resultChanelFromReviewerFlg.rowCount >= 0) {
-                                        resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
-                                            util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', channelInfo.channel_id);
-                                        });
-                                    }
+                                    let selectChanelFromReviewerFlg = config.sql.channelFromReviewerFlg.format('true')
+                                    client.query(selectChanelFromReviewerFlg, (err, resultChanelFromReviewerFlg) => {
+                                        if(err) {
+                                            util.errorBotSay('レビューアーへ通知処理(レビュー完了)時にエラー発生: ' + err);
+                                            client.end();
+                                            return;
+                                        }
+                                        if (resultChanelFromReviewerFlg.rowCount >= 0) {
+                                            resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
+                                                util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', channelInfo.channel_id);
+                                            });
+                                        }
+                                    });
+                                    util.botSay(accountName + 'さんが `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', accountChannelId)
+                                    text = text + '\n班員に `'+ questionListResult.rows[0].summary + '` のセルフレビューチェックが完了したことを通知しました。';
+                                    util.botSay(text + '\n班全員がセルフレビューチェックを完了したため、レビュアーメンバーのチャンネルに完了した旨を通知しました。', channelId);
+                                    client.end();
+                                    return;
                                 });
-                                util.botSay(accountName + 'さんが `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', accountChannelId)
-                                text = text + '\n班員に `'+ questionListResult.rows[0].summary + '` のセルフレビューチェックが完了したことを通知しました。';
-                                util.botSay(text + '\n班全員がセルフレビューチェックを完了したため、レビュアーメンバーのチャンネルに完了した旨を通知しました。', crrent_channel);
+                            // 既に合格している場合                                    
+                            } else {
+                                util.botSay(text + '所属されている班では `'+ questionListResult.rows[0].summary + '` は既に合格しているので、レビュアーと班員への通知は不要ですね。', channelId);
                                 client.end();
                                 return;
-                            });
-                        // 既に合格している場合                                    
+                            }
                         } else {
-                            util.botSay(text + '所属されている班では `'+ questionListResult.rows[0].summary + '` は既に合格しているので、レビュアーと班員への通知は不要ですね。', channelId);
-                            client.end();
+                            bot.startConversation(message, (err, convo) => {
+                                convo.ask(
+                                    'チャンネルで合格判定にしますか？ はい/いいえ\n(レビューアチームに合格したことを通知します。)',
+                                    [
+                                        {
+                                            pattern: 'はい',
+                                            callback: (response, convo) => {
+                                                convo.say('チャンネルを合格に更新しました。');
+                                                updateChannelPassingSummary(channelId, accountChannelId, accountChannelName, accountName, summaryId, channelPassingSummaryList, channelPassingQuestionList, accountPassingQuestionList, questionListResult, text);
+                                                convo.next();
+                                            }
+                                        },
+                                        {
+                                            pattern: 'いいえ',
+                                            callback: (response, convo) => {
+                                                convo.say('では、他のメンバーの合格を待ちますね。');
+                                                util.botSay(accountName + 'さんが `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', accountChannelId)
+                                                util.botSay(text + '\n班員に `'+ questionListResult.rows[0].summary + '` のセルフレビューチェックが完了したことをお伝えました。', channelId);
+                                                client.end();
+                                                convo.next();
+                                            }
+                                        },
+                                        {
+                                            default: true,
+                                            callback: (response, convo) => {
+                                                convo.say('`はい` か `いいえ` でお願いします。 :bow: ');
+                                                convo.repeat();
+                                                convo.next();
+                                            }
+                                        }
+                                    ]);
+                            });
                             return;
                         }
-                    } else {
-                        bot.startConversation(message, (err, convo) => {
-                            convo.ask(
-                                'チャンネルで合格判定にしますか？ はい/いいえ\n(レビューアチームに合格したことを通知します。)',
-                                [
-                                    {
-                                        pattern: 'はい',
-                                        callback: function(response, convo) {
-                                            convo.say('チャンネルを合格に更新しました。');
-                                            updateChannelPassingSummary(crrent_channel, accountChannelId, accountChannelName, accountName, summaryId, channelPassingSummaryList, channelPassingQuestionList, accountPassingQuestionList, questionListResult, text);
-                                            convo.next();
-                                        }
-                                    },
-                                    {
-                                        pattern: 'いいえ',
-                                        callback: function(response, convo) {
-                                            convo.say('では、他のメンバーの合格を待ちますね。');
-                                            util.botSay(accountName + 'さんが `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', accountChannelId)
-                                            util.botSay(text + '\n班員に `'+ questionListResult.rows[0].summary + '` のセルフレビューチェックが完了したことをお伝えました。', channelId);
-                                            client.end();
-                                            convo.next();
-                                        }
-                                    },
-                                    {
-                                        default: true,
-                                        callback: function(response, convo) {
-                                            convo.say('`はい` か `いいえ` でお願いします。 :bow: ');
-                                            convo.repeat();
-                                            convo.next();
-                                        }
-                                    }
-                                ]);
-                        });
-
-                        return;
                     }
+                    
                 } else {
                     //　不合格項目がある場合
                     let questionInfoList = questionListResult.rows
@@ -373,7 +377,6 @@ function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent
                         }
                     });
                     text = text + '\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-                    util.botSay(text, crrent_channel)
 
                     let accountChannelPassingSummary = accountPassingSummaryList.indexOf(`${summaryIdStr}`)
                     let channelPassingSummary = channelPassingSummaryList.indexOf(`${summaryIdStr}`)
@@ -382,44 +385,38 @@ function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent
                         accountPassingSummaryList.splice(channelPassingSummary, 1)
                         let setPhraseForReviewChannelStatus = `passing_summary = ARRAY[${accountPassingSummaryList}]` 
                         let updateAccountChannelStatus = config.sql.review.update.accountChannelStatus.format(setPhraseForReviewChannelStatus, accountChannelId, message.user);
-                        client.query(updateAccountChannelStatus, function(err, result) {
+                        client.query(updateAccountChannelStatus, (err, result) => {
                             if(err) {
                                 util.errorBotSay('ユーザーのステータス更新時の全ユーザーステータス取得時にエラー発生: ' + err);
                                 client.end();
                                 return;
                             }
                             // 既に合格していた場合(チャンネル)
-                            if (channelPassingSummary >= 0) {
-                                // 合格した質問一覧を更新するための文字列(passingQuestionListStr)を生成
-                                questionList.forEach((question, index) => {
-                                    let groupPassingQuestion = channelPassingQuestionList.indexOf(question);
-                                    channelPassingQuestionList.splice(groupPassingQuestion, 1);
-                                });
-
-                                channelPassingSummary.splice(channelPassingSummary, 1)
-                                let passingQuestionListStr = fromArrayToString(channelPassingQuestionList);
-                                let setPhraseForReviewChannelStatus = `passing_summary = ARRAY[${passingQuestionListStr}]` 
+                            if (channelPassingSummary >= 0 && !isCancel) {
+                                // 不合格となった質問一覧(サマリー)を更新する
+                                channelPassingSummaryList.splice(channelPassingSummary, 1)
+                                let setPhraseForReviewChannelStatus = `passing_summary = ARRAY[${channelPassingSummaryList}]` 
                                 let updateChannelStatus = config.sql.review.update.channelStatus.format(setPhraseForReviewChannelStatus, accountChannelId);
-                                client.query(updateChannelStatus, function(err, result) {
+                                client.query(updateChannelStatus, (err, result) => {
                                     if(err) {
                                         util.errorBotSay('ユーザーのステータス更新時の全ユーザーステータス取得時にエラー発生: ' + err);
                                         client.end();
                                         return;
                                     }
                                     let selectChanelFromReviewerFlg = config.sql.channelFromReviewerFlg.format('true')
-                                    client.query(selectChanelFromReviewerFlg, function(err, resultChanelFromReviewerFlg) {
+                                    client.query(selectChanelFromReviewerFlg, (err, resultChanelFromReviewerFlg) => {
                                         if(err) {
                                             util.errorBotSay('レビューアーへ通知処理(レビュー不合格完了)時にエラー発生: ' + err);
                                             client.end();
                                             return;
                                         }
                                         if (resultChanelFromReviewerFlg.rowCount >= 0) {
-                                            resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
-                                                util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェック(個人)で不合格がでたため【合格 → 不合格】になりました。', channelInfo.channel_id)
+                                            resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) => {
+                                                util.botSay(text + '\n' + accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェック(個人)で不合格がでたため【合格 → 不合格】になりました。', channelInfo.channel_id)
                                             });
                                         }
                                     });
-                                    util.botSay('班の合格ステータスが不合格になったとことをレビュアーメンバーに通知しました。', channelId)
+                                    util.botSay(text + '\n班の合格ステータスが不合格に変更されたことをレビュアーメンバーへ通知しました。', channelId)
                                     client.end();
                                     return;
                                 });
@@ -435,13 +432,13 @@ function updateReviewSummaryResult(oldStatusResult, channelId, summaryId, crrent
     });
 }
 
-function updateChannelPassingSummary(crrent_channel, accountChannelId, accountChannelName, accountName, summaryId, channelPassingSummaryList, channelPassingQuestionList, accountPassingQuestionList, questionListResult, text) {
+function updateChannelPassingSummary(channelId, accountChannelId, accountChannelName, accountName, summaryId, channelPassingSummaryList, channelPassingQuestionList, accountPassingQuestionList, questionListResult, text) {
     // 合格したサマリーを更新するためのリストを生成
     channelPassingSummaryList.push(summaryId)
 
     // ユーザーの回答を元にチャンネルのレビュー合格ステータスを更新
     // 指定されたサマリーに該当する合格項目を抽出
-    let passingQuestionListForSummary = accountPassingQuestionList.filter(function(passingQuestion, index, array) {
+    let passingQuestionListForSummary = accountPassingQuestionList.filter((passingQuestion, index, array) => {
         return passingQuestion.match(`${summaryId}_`);
     });
     // チャンネルの合格ステータスに存在しない項目を追加
@@ -455,28 +452,28 @@ function updateChannelPassingSummary(crrent_channel, accountChannelId, accountCh
     let setPhraseForReviewChannelStatus = `passing_summary = ARRAY[${channelPassingSummaryList}]`
     // 班のチャンネルのステータスを合格へ更新する
     let updateReviewChannelStatus = config.sql.review.update.channelStatus.format(setPhraseForReviewChannelStatus, accountChannelId);
-    client.query(updateReviewChannelStatus, function(err, result) {
+    client.query(updateReviewChannelStatus, (err, result) => {
         if(err) {
             util.errorBotSay('ユーザーのステータス更新時の全ユーザーステータス取得時にエラー発生: ' + err);
             client.end();
             return;
         }
         let selectChanelFromReviewerFlg = config.sql.channelFromReviewerFlg.format('true')
-        client.query(selectChanelFromReviewerFlg, function(err, resultChanelFromReviewerFlg) {
+        client.query(selectChanelFromReviewerFlg, (err, resultChanelFromReviewerFlg) => {
             if(err) {
                 util.errorBotSay('レビューアーへ通知処理(個人レビュー完了)時にエラー発生: ' + err);
                 client.end();
                 return;
             }
             if (resultChanelFromReviewerFlg.rowCount >= 0) {
-                resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) =>{
+                resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) => {
                     util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', channelInfo.channel_id);
                 });
             }
         });
         util.botSay(accountName + 'さんが `' + questionListResult.rows[0].summary + '` のセルフレビューチェックを完了しました。', accountChannelId)
         text = text + '\n班員に `'+ questionListResult.rows[0].summary + '` のセルフレビューチェックが完了したことを通知しました。';
-        util.botSay(text + '\n班全員がセルフレビューチェックを完了したため、レビュアーメンバーのチャンネルに完了した旨を通知しました。', crrent_channel);
+        util.botSay(text + '\n班全員がセルフレビューチェックを完了したため、レビュアーメンバーのチャンネルに完了した旨を通知しました。', channelId);
         client.end();
         return;
     });
