@@ -155,6 +155,7 @@ MAIN.sendTitleReviewList = function sendTitleReviewList(channelId, statusResult)
 
         if (!questionListResult.rowCount) {
             util.botSay("一致するレビュー一覧がありません。もう一度入力してください。", message.channel)
+            client.end();
             return;
         }
 
@@ -326,6 +327,7 @@ function sendReviewSummaryListAll (message) {
                         util.botSay(text, message.channel);
                     }
                     util.updateStatus(1, 1, targetChannelList);
+                    client.end();
                 });
             })
         });

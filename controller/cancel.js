@@ -83,6 +83,7 @@ MAIN.startController = function startController(cConnectionString, cController, 
                             util.botSay('了解。処理を中断しました。', channelId)
                             util.updateStatus(1, 1, targetChannelList);
                             if (resultReviewAccountChannelStatus.rows[0].current_summary_id == 0) {
+                                client.end();
                                 return;
                             }
                             util.updateReviewStatus(null, null, 0, 0, targetChannelList);

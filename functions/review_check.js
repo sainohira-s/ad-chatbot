@@ -243,6 +243,7 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                             }
                         });
                         if (allPassingFlag == false) {
+                            client.end();
                             return;
                         }
                     });
@@ -415,10 +416,10 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                                             resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) => {
                                                 util.botSay(text + '\n' + accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェック(個人)で不合格がでたため【合格 → 不合格】になりました。', channelInfo.channel_id)
                                             });
+                                            client.end();
                                         }
                                     });
                                     util.botSay(text + '\n班の合格ステータスが不合格に変更されたことをレビュアーメンバーへ通知しました。', channelId)
-                                    client.end();
                                     return;
                                 });
                             } else {
@@ -428,6 +429,7 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                         });
                     } else {
                         util.botSay(text, channelId)
+                        client.end();
                     }
                 }
             });

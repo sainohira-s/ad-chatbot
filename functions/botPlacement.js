@@ -1,7 +1,6 @@
 'use strict';
 let config = require('config');
 let pg = require('pg');
-let async = require('async');
 let uuid = require('uuid/v4');
 
 let conString = process.env.connectionstring;

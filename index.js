@@ -145,8 +145,10 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                                 client.end();
                             }
                         } else if (resultMessage.rowCount > 1) {
-                            util.botSay('(んー、なんと答えるのがべきなのか...。。:disappointed_relieved:)\n端的に話してくれると嬉しいな！', message.channel);
-                            client.end();
+                            if (message.event != 'ambient') {
+                                util.botSay('(んー、なんと答えるのがべきなのか...。。:disappointed_relieved:)\n端的に話してくれると嬉しいな！', message.channel);
+                                client.end();
+                            }
                         } else {
                             if (message.event != 'ambient') {
                                 request({
