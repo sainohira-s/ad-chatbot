@@ -426,8 +426,6 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                         if (accountChannelPassingSummary >= 0) {
                             accountPassingSummaryList.splice(accountChannelPassingSummary, 1)
                             let setPhraseForReviewChannelStatus = `passing_summary = ARRAY[${accountPassingSummaryList}]` 
-                            console.log(accountChannelPassingSummary)
-                            console.log(setPhraseForReviewChannelStatus)
                             let updateAccountChannelStatus = config.sql.review.update.accountChannelStatus.format(setPhraseForReviewChannelStatus, accountChannelId, message.user);
                             ursrClient.query(updateAccountChannelStatus, (err, result) => {
                                 if(err) {
@@ -436,53 +434,56 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                                     ursrClient.end();
                                     return;
                                 }
-                                // 既に合格していた場合(チャンネル)
-                                if (channelPassingSummary >= 0 && !isCancel) {
-                                    // 不合格となった質問一覧(サマリー)を更新する
-                                    channelPassingSummaryList.splice(channelPassingSummary, 1)
-                                    let setPhraseForReviewChannelStatus = `passing_summary = ARRAY[${channelPassingSummaryList}]` 
-                                    let updateChannelStatus = config.sql.review.update.channelStatus.format(setPhraseForReviewChannelStatus, accountChannelId);
-                                    ursrClient.query(updateChannelStatus, (err, result) => {
-                                        if(err) {
-                                            util.errorBotSay('ユーザーのステータス更新時の全ユーザーステータス取得時にエラー発生: ' + err);
-                                            console.log(err);
-                                            ursrClient.end();
-                                            return;
-                                        }
-                                        let selectChanelFromReviewerFlg = config.sql.channelFromReviewerFlg.format('true')
-                                        ursrClient.query(selectChanelFromReviewerFlg, (err, resultChanelFromReviewerFlg) => {
-                                            if(err) {
-                                                util.errorBotSay('レビューアーへ通知処理(レビュー不合格完了)時にエラー発生: ' + err);
-                                                console.log(err);
-                                                ursrClient.end();
-                                                return;
-                                            }
-                                            if (resultChanelFromReviewerFlg.rowCount > 0) {
-                                                resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) => {
-                                                    util.botSay(text + '\n' + accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェック(個人)で不合格がでたため【合格 → 不合格】になりました。', channelInfo.channel_id)
-                                                });
-                                            }
-                                            ursrClient.end();
-                                        });
-                                        util.botSay(text + '\n班の合格ステータスが不合格に変更されたことをメンバー(チャンネル)とレビュアーへ通知しました。', channelId)
-                                        util.botSay('`'+ questionListResult.rows[0].summary + '` の班のステータスが不合格になりました。', accountChannelName)
-                                        return;
-                                    });
-                                } else {
-                                    util.botSay(text, channelId)
-                                    ursrClient.end();
-                                    return;
-                                }
+                                updateChannelNotPassingSummary (ursrClient, channelPassingSummary, channelPassingSummaryList, questionListResult, channelId, accountChannelName, accountChannelId, text, isCancel);
                             });
                         } else {
-                            util.botSay(text, channelId)
-                            ursrClient.end();
+                            updateChannelNotPassingSummary(ursrClient, channelPassingSummary, channelPassingSummaryList, questionListResult, channelId, accountChannelName, accountChannelId, text, isCancel);
                         }
                     }
                 });
             });
         });
     });
+}
+
+// 既に合格していた場合(チャンネル)
+function updateChannelNotPassingSummary (ursrClient, channelPassingSummary, channelPassingSummaryList, questionListResult, channelId, accountChannelName, accountChannelId, text, isCancel) {
+    if (channelPassingSummary >= 0 && !isCancel) {
+        // 不合格となった質問一覧(サマリー)を更新する
+        channelPassingSummaryList.splice(channelPassingSummary, 1)
+        let setPhraseForReviewChannelStatus = `passing_summary = ARRAY[${channelPassingSummaryList}]` 
+        let updateChannelStatus = config.sql.review.update.channelStatus.format(setPhraseForReviewChannelStatus, accountChannelId);
+        ursrClient.query(updateChannelStatus, (err, result) => {
+            if(err) {
+                util.errorBotSay('ユーザーのステータス更新時の全ユーザーステータス取得時にエラー発生: ' + err);
+                console.log(err);
+                ursrClient.end();
+                return;
+            }
+            let selectChanelFromReviewerFlg = config.sql.channelFromReviewerFlg.format('true')
+            ursrClient.query(selectChanelFromReviewerFlg, (err, resultChanelFromReviewerFlg) => {
+                if(err) {
+                    util.errorBotSay('レビューアーへ通知処理(レビュー不合格完了)時にエラー発生: ' + err);
+                    console.log(err);
+                    ursrClient.end();
+                    return;
+                }
+                if (resultChanelFromReviewerFlg.rowCount > 0) {
+                    resultChanelFromReviewerFlg.rows.forEach((channelInfo,index) => {
+                        util.botSay(accountChannelName + 'が `' + questionListResult.rows[0].summary + '` のセルフレビューチェック(個人)で不合格がでたため【合格 → 不合格】になりました。', channelInfo.channel_id)
+                    });
+                }
+                ursrClient.end();
+            });
+            util.botSay(text + '\n班の合格ステータスが不合格に変更されたことをメンバー(チャンネル)とレビュアーへ通知しました。', message.channel)
+            util.botSay('`'+ questionListResult.rows[0].summary + '` の班のステータスが不合格になりました。', accountChannelId)
+            return;
+        });
+    } else {
+        util.botSay(text, message.channel)
+        ursrClient.end();
+        return;
+    }
 }
 
 function updateChannelPassingSummary(channelId, accountChannelId, accountChannelName, accountName, summaryId, channelPassingSummaryList, channelPassingQuestionList, accountPassingQuestionList, questionListResult, text) {
