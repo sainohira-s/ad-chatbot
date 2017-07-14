@@ -24,6 +24,10 @@ MAIN.setProperty = function setProperty(slackBot, recieveMessage, rChannelWordDi
 MAIN.reviewCheck = function reviewCheck(channelId, statusResult) {
     let rcClient = new pg.Client(connectionString);
     rcClient.connect((err) => {
+        if (err) {
+            console.log('error: ' + err);
+            return;
+        }
         if (targetChannelList.indexOf(channelId) == -1) {
             let selectAccountChannelStatus = config.sql.review.accountChannelStatusFromAccountId.format(message.user)
             rcClient.query(selectAccountChannelStatus, (err, accountChannelStatusResult) => {
@@ -77,6 +81,10 @@ MAIN.reviewCheck = function reviewCheck(channelId, statusResult) {
 function indicateQuestion(summaryResult, accountChannelStatusResult, channelId) {
     let iqClient = new pg.Client(connectionString);
     iqClient.connect((err) => {
+        if (err) {
+            console.log('error: ' + err);
+            return;
+        }
         let currentSummaryId = summaryResult.rows[0].id
         let currentCategotyId = summaryResult.rows[0].category_id
         let summaryTitleCategory = summaryResult.rows[0].category_id
@@ -184,6 +192,10 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
     let selectChannelStatus = config.sql.review.accountChannelStatusFromAccountId.format(message.user)
     let ursrClient = new pg.Client(connectionString);
     ursrClient.connect((err) => {
+        if (err) {
+            console.log('error: ' + err);
+            return;
+        }
         ursrClient.query(selectChannelStatus, (err, statusResult) => {
             if(err) {
                 util.errorBotSay('レビューサマリーアップデート時のステータス確認時にエラー発生: ' + err);
@@ -452,7 +464,8 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
                                             }
                                             ursrClient.end();
                                         });
-                                        util.botSay(text + '\n班の合格ステータスが不合格に変更されたことをレビュアーメンバーへ通知しました。', channelId)
+                                        util.botSay(text + '\n班の合格ステータスが不合格に変更されたことをメンバー(チャンネル)とレビュアーへ通知しました。', channelId)
+                                        util.botSay('`'+ questionListResult.rows[0].summary + '` の班のステータスが不合格になりました。', accountChannelName)
                                         return;
                                     });
                                 } else {
@@ -475,6 +488,9 @@ MAIN.updateReviewSummaryResult= function updateReviewSummaryResult(oldStatusResu
 function updateChannelPassingSummary(channelId, accountChannelId, accountChannelName, accountName, summaryId, channelPassingSummaryList, channelPassingQuestionList, accountPassingQuestionList, questionListResult, text) {
     let ucpsClient = new pg.Client(connectionString);
     ucpsClient.connect((err) => {
+        if (err) {
+            console.log('error: ' + err);
+        }
         // 合格したサマリーを更新するためのリストを生成
         channelPassingSummaryList.push(summaryId)
 
