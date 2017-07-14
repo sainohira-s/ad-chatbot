@@ -2,7 +2,7 @@
   "messageType": {
     "message":{
       "id": 1,
-      "name": "メッセージ"
+      "name": "メンション・ダイレクトメッセージに対して反応"
      },
     "selfReviewList":{
       "id": 2,
@@ -14,11 +14,11 @@
      },
      "regularWord":{
       "id": 4,
-      "name": "定期一言配信"
+      "name": "メッセージ配信"
      },
      "channelMessage":{
       "id": 5,
-      "name": "メッセージ"
+      "name": "メッセージ全般に反応"
      }
   },
   "sql":{
@@ -45,7 +45,6 @@
     "channelCompositionFromChannelIdAndAccountId": "SELECT * FROM channel_composition as cc WHERE channel_id = '{0}' AND account_id = '{1}';",
     "channelCompositionFromAccountId": "SELECT channel_id from channel_composition WHERE account_id = '{0}';",
     "channelFromReviewerFlg":"SELECT * FROM channel WHERE reviewer_flg={0}",
-    "uuid":"select uuid_generate_v4()",
     "review":{
       "summaryList":"SELECT id, summary FROM Review_Summary ORDER BY id;",
       "summaryFromKeyword":"SELECT * FROM review_summary_keyword as rsk INNER JOIN review_summary as rs ON rsk.summary_id = rs.id WHERE '{0}' LIKE '%' || rsk.keyword || '%';",

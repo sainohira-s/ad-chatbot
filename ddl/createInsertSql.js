@@ -33,7 +33,7 @@ rlMessage.on('line', function(lineMessage) {
             }
             else if(lineKeyword.indexOf(msgVal[0]) >= 0){
                 var keyVal = lineKeyword.split(',');
-                var insertKeywordSql = "INSERT INTO public.keyword(" + columnsKeyword + ") VALUES ('" + strUuid.toString() + "'," + keyVal[1] + ");\n";
+                var insertKeywordSql = "INSERT INTO public.keyword(" + columnsKeyword + ") VALUES ('" + strUuid.toString() + "'," + keyVal[1].replace(/;/g, ',') + ");\n";
                 console.log(insertKeywordSql);
 
                 fs.appendFileSync(fileInsertSql, insertKeywordSql, 'utf-8');
