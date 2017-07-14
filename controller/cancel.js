@@ -17,23 +17,24 @@ MAIN.startController = function startController(cConnectionString, cController, 
     controller = cController;
     channelWordDic = cChannelWordDic;
 
-    let client = new pg.Client(connectionString);
-    client.connect((err) => {
+    let cClient = new pg.Client(connectionString);
+    cClient.connect((err) => {
         if (err) {
             console.log('error: ' + err);
             return;
         }
         targetChannelList = [];
         let selectChannels = config.sql.channels;
-        client.query(selectChannels, (err, channelsResult) => {
+        cClient.query(selectChannels, (err, channelsResult) => {
             if (err) {
                 console.log(err)
-                client.end();
+                cClient.end();
                 return;
             }
             channelsResult.rows.forEach((channelInfo, index, array) => {
                 targetChannelList.push(channelInfo.channel_id);
             });
+            cClient.end();
         });
     });
 
@@ -45,13 +46,17 @@ MAIN.startController = function startController(cConnectionString, cController, 
 
         let channelId = message.channel;
         let accountId = message.user
-        let client = new pg.Client(connectionString);
-        client.connect((err) => {
+        let cClient = new pg.Client(connectionString);
+        cClient.connect((err) => {
+            if (err) {
+                console.log('error: ' + err);
+            }
             // Utilityのプロパティ設定
-            util.setProperty(bot, message, client);
+            util.setProperty(bot, message, cClient);
             util.accoutAccessCountUp();
             if (err) {
-                util.errorBotSay('キャンセル時のステータス確認時にエラー発生: ' + err)
+                util.errorBotSay('キャンセル時のステータス確認時にエラー発生: ' + err);
+                console.log(err);
                 return;
             }
             let selectStatus = config.sql.channelStatus.format(channelId);
@@ -59,10 +64,11 @@ MAIN.startController = function startController(cConnectionString, cController, 
             if (targetChannelList.indexOf(channelId) == -1) {
                 selectStatus = config.sql.accountChannelStatus.format(accountId);
             }
-            client.query(selectStatus, (err, statusResult) => {
+            cClient.query(selectStatus, (err, statusResult) => {
                 if (err) {
-                    util.errorBotSay('キャンセル時のステータス確認時にエラー発生: ' + err)
-                    client.end();
+                    util.errorBotSay('キャンセル時のステータス確認時にエラー発生: ' + err);
+                    console.log(err);
+                    cClient.end();
                     return;
                 }
                 if (statusResult.rows[0].current_type_id == 1 && statusResult.rows[0].stage == 1) {
@@ -70,25 +76,29 @@ MAIN.startController = function startController(cConnectionString, cController, 
                     if (message.event != 'ambient') {
                         util.botSay('んー、そう言われても..。 :droplet:', channelId)
                     }
-                    client.end();
+                    cClient.end();
                 } else if (statusResult.rows[0].current_type_id == 3 && statusResult.rows[0].stage == 3) {
                     let selectReviewAccountChannelStatus = config.sql.review.accountChannelStatusFromAccountId.format(message.user);
-                    client.query(selectReviewAccountChannelStatus, (err, resultReviewAccountChannelStatus) => {
+                    cClient.query(selectReviewAccountChannelStatus, (err, resultReviewAccountChannelStatus) => {
                         if (err) {
-                            util.errorBotSay('キャンセル時のアカウントのレビューステータス確認でエラー発生: ' + err)
-                            client.end();
+                            util.errorBotSay('キャンセル時のアカウントのレビューステータス確認でエラー発生: ' + err);
+                            console.log(err);
+                            cClient.end();
                             return;
                         }
                         if (resultReviewAccountChannelStatus.rowCount == 1) {
                             util.botSay('了解。処理を中断しました。', channelId)
                             util.updateStatus(1, 1, targetChannelList);
                             if (resultReviewAccountChannelStatus.rows[0].current_summary_id == 0) {
-                                client.end();
+                                cClient.end();
                                 return;
                             }
                             util.updateReviewStatus(null, null, 0, 0, targetChannelList);
-                            reviewCheck.setProperty(bot, message, client, channelWordDic, targetChannelList);
+                            reviewCheck.setProperty(bot, message, cClient, channelWordDic, targetChannelList);
                             reviewCheck.updateReviewSummaryResult(statusResult, channelId, resultReviewAccountChannelStatus.rows[0].current_summary_id, true);
+                            cClient.end();
+                        } else {
+                            cClient.end();
                         }
                     });
                 } else {
@@ -96,13 +106,9 @@ MAIN.startController = function startController(cConnectionString, cController, 
                     util.updateStatus(1, 1, targetChannelList)
                     util.updateReviewStatus(null, null, 0, 0, targetChannelList)
                     util.botSay('了解。処理を中断しました。', channelId)
+                    cClient.end();
                 }
             });
         });
     });
 };
-
-
-function updateReviewAccoutnChannel() {
-    
-}

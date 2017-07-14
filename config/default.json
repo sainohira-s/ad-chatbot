@@ -37,6 +37,7 @@
       "messageList": "SELECT key.keyword, ms.message, ms.type_id FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE {0} = ms.type_id;"
     },
     "accountFromAccountId":"SELECT * FROM account WHERE account_id = '{0}'",
+    "accountFromAccountName":"SELECT * FROM account WHERE name = '{0}'",
     "channels": "SELECT channel_id, name, reviewer_flg FROM channel;",
     "channel":"SELECT * FROM channel WHERE channel_id = '{0}';",
     "channelStatus": "SELECT * FROM channel_status as cs WHERE channel_id = '{0}'",
