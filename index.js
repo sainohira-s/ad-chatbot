@@ -173,17 +173,19 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                     // レビューリスト確認機能操作中ステータス
                     reviewList.setProperty(bot, message, channelWordDic, targetChannelList)
                     review.reviewProcess(message, statusResult, channelId, null)
+                    client.end();
                     break;
                 case config.messageType.selfReviewCheck.id:
                     // レビューチェック開始
                     reviewList.setProperty(bot, message, channelWordDic, targetChannelList)
                     reviewCheck.setProperty(bot, message, channelWordDic, targetChannelList)
                     review.reviewProcess(message, statusResult, channelId, null)
-                    break;
+                    client.end();
+                   break;
                 default: 
+                    client.end();
                     break;
                 }
-                client.end();
             }
         });
     });
