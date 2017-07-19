@@ -24,6 +24,9 @@ exports.says = function(bot) {
                 for(var i=0; i<resultSchedule.rowCount; i++){
                     new schedule.scheduleJob(resultSchedule.rows[i].message[(Math.floor(Math.random() * resultSchedule.rows[0].message.length))], resultSchedule.rows[i].keyword, function(){
                         let text = this.name;
+                        if ( text.match(/\\n/)) {
+                            text = text.replace(/\\n/g,'\n');
+                        }
                         let clientSche = new pg.Client(conString);
                         clientSche.connect((err) => {
                             if(err) {

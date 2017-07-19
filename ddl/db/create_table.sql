@@ -34,7 +34,7 @@ CREATE TABLE message (
 CREATE TABLE keyword (
     id          UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
     message_id  UUID        NOT NULL,
-    keyword     varchar(20) NOT NULL UNIQUE,
+    keyword     varchar(60) NOT NULL UNIQUE,
     FOREIGN KEY (message_id) REFERENCES message (id)
 );
 
