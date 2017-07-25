@@ -351,24 +351,25 @@ function sendReviewSummaryListAll (message) {
                     return;
                 }
                 let text = '各班のレビュー状況です。\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
-                channelStatusForReviewerResult.rows.forEach((channelStatus, index) => {
-                    let groupId = channelStatus.group_id;
-                    let memberListText = ''
-                    let acsClient = new pg.Client(connectionString);
-                    acsClient.connect((err) => {
-                        if (err) {
-                            console.log('error: ' + err);
+                let acsClient = new pg.Client(connectionString);
+                acsClient.connect((err) => {
+                    if (err) {
+                        console.log('error: ' + err);
+                    }
+                    let accountChannelStatus = config.sql.review.accountChannelStatusList
+                    acsClient.query(accountChannelStatus, function(err, allAccountStatusResult) {
+                        if(err) {
+                            util.errorBotSay('班員一覧取得時にエラー発生: ' + err);
+                            console.log(err);
+                            acsClient.end();
+                            return;
                         }
-                        let accountChannelStatus = config.sql.review.accountChannelStatus.format(channelStatus.channel_id)
-                        acsClient.query(accountChannelStatus, function(err, allAccountStatusResult) {
-                            if(err) {
-                                util.errorBotSay('班員一覧取得時にエラー発生: ' + err);
-                                console.log(err);
-                                acsClient.end();
-                                return;
-                            }
+                        channelStatusForReviewerResult.rows.forEach((channelStatus, channelStatusIndex) => {
+                            let memberListText = ''
                             allAccountStatusResult.rows.forEach((AccountStatusResult, index, array) => {
-                                memberListText = memberListText + AccountStatusResult.name +', '
+                                if (AccountStatusResult.channel_id == channelStatus.channel_id) {
+                                    memberListText = memberListText + AccountStatusResult.name +', '
+                                }
                             })
                             memberListText = memberListText.substr( 0, memberListText.length-2 );
                             let channelName = channelStatus.name;
@@ -378,14 +379,14 @@ function sendReviewSummaryListAll (message) {
                                 text = text + '\n ' + flagText + '  '+ summaryInfo.id + '.  *' + summaryInfo.summary + '*';
                             })
                             text = text + '\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
-                            if ((channelStatusForReviewerResult.rowCount - 1)  == index) {
+                            if ((channelStatusForReviewerResult.rowCount - 1)  == channelStatusIndex) {
                                 util.botSay(text, message.channel);
                             }
-                            util.updateStatus(1, 1, targetChannelList);
-                            acsClient.end();
                         });
+                        acsClient.end();
                     });
                 })
+                util.updateStatus(1, 1, targetChannelList);
                 srslaClient.end();
             });
         });
