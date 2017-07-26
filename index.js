@@ -65,6 +65,8 @@ client.connect((err) => {
 // controller定義ファイルの読み込み
 let cancelController = require('./controller/cancel.js').CANCEL;
 cancelController.startController(connectionString, controller, channelWordDic);
+let manageController = require('./controller/manage.js').MANAGE;
+manageController.startController(connectionString, controller, channelWordDic);
 
 controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
     // SQLクエリに影響する文字列を置換
