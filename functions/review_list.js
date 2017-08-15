@@ -188,13 +188,12 @@ MAIN.sendTitleReviewList = function sendTitleReviewList(channelId, statusResult)
                 strlClient.end();
                 return;
             }
-
-            if (!questionListResult.rowCount) {
+            // 一致する項目がない場合
+            if (questionListResult.rowCount == 0) {
                 util.botSay("一致するレビュー一覧がありません。もう一度入力してください。", message.channel)
                 strlClient.end();
                 return;
             }
-
             let passingQuestion;
             if(targetChannelList.indexOf(message.channel) >= 0) {
                 let selectChannelStatus = config.sql.review.channelStatus.format(message.channel);
@@ -209,7 +208,6 @@ MAIN.sendTitleReviewList = function sendTitleReviewList(channelId, statusResult)
                     formatQuestionList(channelId, questionListResult, passingQuestion);
                     strlClient.end();
                 }); 
-
             } else {
                 let selectAccountChannelReviewStatusForChannelFromAccountId = config.sql.review.accountChannelStatusFromAccountId.format(message.user);
                 strlClient.query(selectAccountChannelReviewStatusForChannelFromAccountId, function(err, accountChannelReviewStatusResult) {
@@ -234,29 +232,23 @@ MAIN.sendTitleReviewList = function sendTitleReviewList(channelId, statusResult)
 }
 
 function formatQuestionList(channelId, questionListResult, passingQuestion) {
-
-    // 一致する項目がない場合
-    if (!questionListResult.rowCount) {
-        util.botSay('その内容と一致する項目は見当たらないため、もう一度入力をお願いします:bow:', message.channel);
-        return;
-    }
-
+    // 複数の項目が選択されていた場合、summary_idが一番大きい数を取得
     let summaryId = questionListResult.rows[0].summary_id;
-    // 複数の項目が選択されていた場合
+    let useQuestionList = [];
+    // summary_idが等しいもののみを質問事項として抽出
     for (let i in questionListResult.rows) {
-        if (questionListResult.rows[i].summary_id != summaryId) {
-            util.botSay('複数の選択が確認されました。もう一度、選択してください。', message.channel);
-            client.end();
-            return;
+        console.log(questionListResult.rows[i].title_number + '-' + questionListResult.rows[i].question_id);
+        if (questionListResult.rows[i].summary_id == summaryId) {
+            useQuestionList.push(questionListResult.rows[i])
         }
     }
-    let useQuestionList = questionListResult.rows;
+
     let passingQuestionList = passingQuestion.filter((question, index, array) => {
         return (question.match(`${summaryId}_`))
     });
     // サマリーに該当する全質問のリストを生成
     let questionList = [];
-    questionListResult.rows.forEach((questionInfo, index) => {
+    useQuestionList.forEach((questionInfo, index) => {
         let question = questionInfo.question_id;
         questionList.push(`${summaryId}_${question}`);
     })
@@ -269,9 +261,9 @@ function formatQuestionList(channelId, questionListResult, passingQuestion) {
         }
     });
     // メッセージ文作成
-    let text = '*' + questionListResult.rows[0].summary + '* のレビューチェック一覧です。';
+    let text = '*' + useQuestionList[0].summary + '* のレビューチェック一覧です。';
     text = text + '\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ';
-    questionListResult.rows.forEach((questionInfo, index) => {
+    useQuestionList.forEach((questionInfo, index) => {
         // 合格した項目かチェック
         let showQuestionFlag = false
 
@@ -351,43 +343,35 @@ function sendReviewSummaryListAll (message) {
                     return;
                 }
                 let text = '各班のレビュー状況です。\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
-                let acsClient = new pg.Client(connectionString);
-                acsClient.connect((err) => {
-                    if (err) {
-                        console.log('error: ' + err);
-                    }
-                    let accountChannelStatus = config.sql.review.accountChannelStatusList
-                    acsClient.query(accountChannelStatus, function(err, allAccountStatusResult) {
+                channelStatusForReviewerResult.rows.forEach((channelStatus, index) => {
+                    let groupId = channelStatus.group_id;
+                    let memberListText = ''
+                    let accountChannelStatus = config.sql.review.accountChannelStatus.format(channelStatus.channel_id)                
+                    srslaClient.query(accountChannelStatus, function(err, allAccountStatusResult) {
                         if(err) {
                             util.errorBotSay('班員一覧取得時にエラー発生: ' + err);
                             console.log(err);
-                            acsClient.end();
+                            srslaClient.end();
                             return;
                         }
-                        channelStatusForReviewerResult.rows.forEach((channelStatus, channelStatusIndex) => {
-                            let memberListText = ''
-                            allAccountStatusResult.rows.forEach((AccountStatusResult, index, array) => {
-                                if (AccountStatusResult.channel_id == channelStatus.channel_id) {
-                                    memberListText = memberListText + AccountStatusResult.name +', '
-                                }
-                            })
-                            memberListText = memberListText.substr( 0, memberListText.length-2 );
-                            let channelName = channelStatus.name;
-                            text = text + `\n \`${channelName}\`  (${memberListText})`;
-                            summaryResult.rows.forEach((summaryInfo, index) => {
-                                let flagText = (channelStatus.passing_summary.indexOf(summaryInfo.id.toString()) >= 0)?':white_check_mark:':':white_large_square:';
-                                text = text + '\n ' + flagText + '  '+ summaryInfo.id + '.  *' + summaryInfo.summary + '*';
-                            })
-                            text = text + '\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
-                            if ((channelStatusForReviewerResult.rowCount - 1)  == channelStatusIndex) {
-                                util.botSay(text, message.channel);
-                            }
-                        });
-                        acsClient.end();
+                        allAccountStatusResult.rows.forEach((AccountStatusResult, index, array) => {
+                            memberListText = memberListText + AccountStatusResult.name +', '
+                        })
+                        memberListText = memberListText.substr( 0, memberListText.length-2 );
+                        let channelName = channelStatus.name;
+                        text = text + `\n \`${channelName}\`  (${memberListText})`;
+                        summaryResult.rows.forEach((summaryInfo, index) => {
+                            let flagText = (channelStatus.passing_summary.indexOf(summaryInfo.id.toString()) >= 0)?':white_check_mark:':':white_large_square:';
+                            text = text + '\n ' + flagText + '  '+ summaryInfo.id + '.  *' + summaryInfo.summary + '*';
+                        })
+                        text = text + '\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
+                        if ((channelStatusForReviewerResult.rowCount - 1)  == index) {
+                            util.botSay(text, message.channel);
+                        }
+                        util.updateStatus(1, 1, targetChannelList);
+                        srslaClient.end();
                     });
                 })
-                util.updateStatus(1, 1, targetChannelList);
-                srslaClient.end();
             });
         });
     });

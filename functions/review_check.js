@@ -53,6 +53,8 @@ MAIN.reviewCheck = function reviewCheck(channelId, statusResult) {
                         rcClient.end();
                         return;
                     }
+                    let summaryInfo;
+                    console.log(summaryResult.rows)
                     if (firstFlg) {
                         channelWordDic[channelId] = ""
                         if (message.text.match(/OK/i)) {
@@ -64,13 +66,21 @@ MAIN.reviewCheck = function reviewCheck(channelId, statusResult) {
                             util.botSay('1つの項目を選択してください。', channelId);
                             rcClient.end();
                             return;
+                        } else if (summaryResult.rowCount == 1){
+                            summaryInfo = summaryResult.rows[0];
                         } else if (summaryResult.rowCount > 1){
-                            util.botSay('複数の選択が確認されました。もう一度、選択してください。', channelId);
-                            rcClient.end();
-                            return;
+                            let maxSummaryId = 0;
+                            summaryResult.rows.forEach((tempSummaryInfo, index) => {
+                                if (maxSummaryId < tempSummaryInfo.summary_id) {
+                                    maxSummaryId = tempSummaryInfo.summary_id;
+                                    summaryInfo = tempSummaryInfo;
+                                }
+                            })
                         }
+                    } else {
+                        summaryInfo = summaryResult.rows[0];
                     }
-                    indicateQuestion(summaryResult, accountChannelStatusResult, channelId);
+                    indicateQuestion(summaryInfo, accountChannelStatusResult, channelId);
                     rcClient.end();
                 });
             });
@@ -78,16 +88,16 @@ MAIN.reviewCheck = function reviewCheck(channelId, statusResult) {
     });
 }
 
-function indicateQuestion(summaryResult, accountChannelStatusResult, channelId) {
+function indicateQuestion(summaryInfo, accountChannelStatusResult, channelId) {
     let iqClient = new pg.Client(connectionString);
     iqClient.connect((err) => {
         if (err) {
             console.log('error: ' + err);
             return;
         }
-        let currentSummaryId = summaryResult.rows[0].id
-        let currentCategotyId = summaryResult.rows[0].category_id
-        let summaryTitleCategory = summaryResult.rows[0].category_id
+        let currentSummaryId = summaryInfo.id
+        let currentCategotyId = summaryInfo.category_id
+        let summaryTitleCategory = summaryInfo.category_id
         let passingQuestionList = accountChannelStatusResult.rows[0].passing_question
         let passingQuestionIdList = []
         passingQuestionList.forEach((value, index) => {
@@ -119,7 +129,7 @@ function indicateQuestion(summaryResult, accountChannelStatusResult, channelId) 
             let text = '';
             let questionNumber = parseInt(accountChannelStatusResult.rows[0].current_question);
             if (accountChannelStatusResult.rows[0].current_summary_id == 0) {
-                text = text + '`' + summaryResult.rows[0].summary + '` のレビューチェック(全 `' + questionListForTitleResult.rowCount + '` 項目)を開始します。OK/NGで回答してください。';
+                text = text + '`' + summaryInfo.summary + '` のレビューチェック(全 `' + questionListForTitleResult.rowCount + '` 項目)を開始します。OK/NGで回答してください。';
                 questionNumber = parseInt(questionListForTitleResult.rowCount - 1 );
                 text = text + '\n' + questionListForTitleResult.rows[questionNumber].title_number + '. *' + questionListForTitleResult.rows[questionNumber].title + '* \n';
                 text = text + '```\n        ' + questionListForTitleResult.rows[questionNumber].title_number +'-' + questionListForTitleResult.rows[questionNumber].question_number +'. ' + questionListForTitleResult.rows[questionNumber].question + '\n```';

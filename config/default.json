@@ -2,7 +2,7 @@
   "messageType": {
     "message":{
       "id": 1,
-      "name": "メッセージ"
+      "name": "メンション・ダイレクトメッセージに対して反応"
      },
     "selfReviewList":{
       "id": 2,
@@ -14,11 +14,11 @@
      },
      "regularWord":{
       "id": 4,
-      "name": "定期一言配信"
+      "name": "メッセージ配信"
      },
      "channelMessage":{
       "id": 5,
-      "name": "メッセージ"
+      "name": "メッセージ全般に反応"
      }
   },
   "sql":{
@@ -37,7 +37,6 @@
       "messageList": "SELECT key.keyword, ms.message, ms.type_id FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE {0} = ms.type_id;"
     },
     "accountFromAccountId":"SELECT * FROM account WHERE account_id = '{0}'",
-    "accountForReviewerByAccountId":"SELECT * FROM account WHERE reviewer_flg = true AND account_id = '{0}'",
     "accountFromAccountName":"SELECT * FROM account WHERE name = '{0}'",
     "channels": "SELECT channel_id, name, reviewer_flg FROM channel;",
     "channel":"SELECT * FROM channel WHERE channel_id = '{0}';",
@@ -46,7 +45,6 @@
     "channelCompositionFromChannelIdAndAccountId": "SELECT * FROM channel_composition as cc WHERE channel_id = '{0}' AND account_id = '{1}';",
     "channelCompositionFromAccountId": "SELECT channel_id from channel_composition WHERE account_id = '{0}';",
     "channelFromReviewerFlg":"SELECT * FROM channel WHERE reviewer_flg={0}",
-    "uuid":"select uuid_generate_v4()",
     "review":{
       "summaryList":"SELECT id, summary FROM Review_Summary ORDER BY id;",
       "summaryFromKeyword":"SELECT * FROM review_summary_keyword as rsk INNER JOIN review_summary as rs ON rsk.summary_id = rs.id WHERE '{0}' LIKE '%' || rsk.keyword || '%';",
@@ -54,12 +52,11 @@
       "channelStatus":"SELECT * FROM channel as c INNER JOIN review_channel_status as rcs ON c.channel_id = rcs.channel_id WHERE c.reviewer_flg=false AND c.channel_id = '{0}'",
       "channelStatusForReviewer":"SELECT * FROM channel as c INNER JOIN review_channel_status as rcs ON c.channel_id = rcs.channel_id WHERE c.reviewer_flg=false AND NOT c.channel_id = '{0}' ORDER BY name;",
       "accountChannelStatus":"SELECT a.account_id, a.name, passing_summary, passing_question, current_summary_id FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id WHERE channel_id = '{0}';",
-      "accountChannelStatusList":"SELECT a.account_id, a.name, passing_summary, passing_question, current_summary_id, channel_id FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id;",
       "accountChannelStatusFromAccountId":"SELECT a.account_id, cc.channel_id, a.name, passing_summary, passing_question, current_summary_id, current_question FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id WHERE a.account_id = '{0}';",
       "questionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rt.category_id = {0} ORDER BY RT.id DESC, question_number DESC;",
       "okQuestionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rt.category_id = {0} AND RQ.id = ANY(ARRAY[{1}]) ORDER BY RT.id DESC, question_number DESC;",
       "ngQuestionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE  rt.category_id = {0} AND NOT RQ.id = ANY(ARRAY[{1}]) ORDER BY RT.id DESC, question_number DESC;",
-      "questionList":"SELECT rs.id as summary_id, rs.summary, rt.title_number, rt.title, rq.id as question_id, question, rq.question_number  FROM (review_summary_keyword as rsk INNER JOIN review_summary as rs ON summary_id = rs.id) INNER JOIN review_title as rt ON rs.category_id = rt.category_id INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE '{0}' LIKE '%' || rsk.keyword || '%' ORDER BY rq.title_id, question_number;",
+      "questionList":"SELECT rs.id as summary_id, rs.summary, rt.title_number, rt.title, rq.id as question_id, question, rq.question_number  FROM (review_summary_keyword as rsk INNER JOIN review_summary as rs ON summary_id = rs.id) INNER JOIN review_title as rt ON rs.category_id = rt.category_id INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE '{0}' LIKE '%' || rsk.keyword || '%' ORDER BY summary_id DESC, rq.title_id, question_number;",
       "questionListFromSummaryId":"SELECT rs.id as summary_id, rs.summary, rt.title_number, rt.title, rq.id as question_id, question, rq.question_number FROM review_summary as rs INNER JOIN review_title as rt ON rs.category_id = rt.category_id INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rs.id = {0} ORDER BY rq.title_id, question_number;",
       "summaryAndQuestionListFromAccountId":"SELECT ac.account_id, ac.name as account_name, ch.channel_id, ch.name as channel_name, racs.passing_summary as a_passing_summary, racs.passing_question as a_passing_question, rcs.passing_summary as c_passing_summary, rcs.passing_question as c_passing_question FROM account as ac INNER JOIN channel_composition as cc ON ac.account_id = cc.account_id INNER JOIN review_account_channel_Status as racs ON cc.id = racs.id INNER JOIN channel as ch ON ch.channel_id = cc.channel_id INNER JOIN review_channel_status as rcs ON ch.channel_id = rcs.channel_id WHERE ch.channel_id = '{0}';",
       "update":{
