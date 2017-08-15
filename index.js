@@ -67,6 +67,8 @@ let cancelController = require('./controller/cancel.js').CANCEL;
 cancelController.startController(connectionString, controller, channelWordDic);
 let manageController = require('./controller/manage.js').MANAGE;
 manageController.startController(connectionString, controller, channelWordDic);
+let famousQuotesController = require('./controller/famousQuotes.js').FAMOUSQUOTES;
+famousQuotesController.startController(controller);
 
 controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
     // SQLクエリに影響する文字列を置換
@@ -103,8 +105,7 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                     let selectMessage = config.sql.messageSearch.format(message.text)
                     client.query(selectMessage, (err, resultMessage) => {
                         if(err) {
-                            util.errorBotSay('現在のステータスが0ときのメッセージ取得時にエラー発生: ' + err);
-                            console.log(err);
+                            console.log('現在のステータスが0ときのメッセージ取得時にエラー発生: ' + err);
                             client.end();
                             return;
                         }
@@ -163,8 +164,7 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                                     if (body.status == 0) {
                                         bot.reply(message, `${body.results[0].reply}`);
                                     } else {
-                                        util.errorBotSay(`TalkAPI ERROR: ${err}`)
-                                        console.log(err);
+                                        console.log(`TalkAPI ERROR: ${err}`);
                                     }
                                 });
                             }
