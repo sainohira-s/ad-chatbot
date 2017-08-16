@@ -329,16 +329,14 @@ function sendReviewSummaryListAll (message) {
         let selectSummaryList = config.sql.review.summaryList;
         srslaClient.query(selectSummaryList, function(err, summaryResult) {
             if(err) {
-                util.errorBotSay('レビュアーサマリー一覧取得時にエラー発生: ' + err);
-                console.log(err);
+                console.log('レビュアーサマリー一覧取得時にエラー発生: ' + err);
                 srslaClient.end();
                 return;
             }
             let channelStatusForReviewer = config.sql.review.channelStatusForReviewer.format(message.user)
             srslaClient.query(channelStatusForReviewer, function(err, channelStatusForReviewerResult) {
                 if(err) {
-                    util.errorBotSay('レビュー全班一覧取得時にエラー発生: ' + err);
-                    console.log(err);
+                    console.log('レビュー全班一覧取得時にエラー発生: ' + err);
                     srslaClient.end();
                     return;
                 }
@@ -346,30 +344,35 @@ function sendReviewSummaryListAll (message) {
                 channelStatusForReviewerResult.rows.forEach((channelStatus, index) => {
                     let groupId = channelStatus.group_id;
                     let memberListText = ''
-                    let accountChannelStatus = config.sql.review.accountChannelStatus.format(channelStatus.channel_id)                
-                    srslaClient.query(accountChannelStatus, function(err, allAccountStatusResult) {
-                        if(err) {
-                            util.errorBotSay('班員一覧取得時にエラー発生: ' + err);
-                            console.log(err);
-                            srslaClient.end();
-                            return;
+                    let accountChannelStatus = config.sql.review.accountChannelStatus.format(channelStatus.channel_id)
+                    let getChannelListClient = new pg.Client(connectionString);
+                    getChannelListClient.connect((err) => {
+                        if (err) {
+                            console.log('error: ' + err);
                         }
-                        allAccountStatusResult.rows.forEach((AccountStatusResult, index, array) => {
-                            memberListText = memberListText + AccountStatusResult.name +', '
-                        })
-                        memberListText = memberListText.substr( 0, memberListText.length-2 );
-                        let channelName = channelStatus.name;
-                        text = text + `\n \`${channelName}\`  (${memberListText})`;
-                        summaryResult.rows.forEach((summaryInfo, index) => {
-                            let flagText = (channelStatus.passing_summary.indexOf(summaryInfo.id.toString()) >= 0)?':white_check_mark:':':white_large_square:';
-                            text = text + '\n ' + flagText + '  '+ summaryInfo.id + '.  *' + summaryInfo.summary + '*';
-                        })
-                        text = text + '\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
-                        if ((channelStatusForReviewerResult.rowCount - 1)  == index) {
-                            util.botSay(text, message.channel);
-                        }
-                        util.updateStatus(1, 1, targetChannelList);
-                        srslaClient.end();
+                        getChannelListClient.query(accountChannelStatus, function(err, allAccountStatusResult) {
+                            if(err) {
+                                console.log('班員一覧取得時にエラー発生: ' + err);
+                                getChannelListClient.end();
+                                return;
+                            }
+                            allAccountStatusResult.rows.forEach((AccountStatusResult, index, array) => {
+                                memberListText = memberListText + AccountStatusResult.name +', '
+                            })
+                            memberListText = memberListText.substr( 0, memberListText.length-2 );
+                            let channelName = channelStatus.name;
+                            text = text + `\n \`${channelName}\`  (${memberListText})`;
+                            summaryResult.rows.forEach((summaryInfo, index) => {
+                                let flagText = (channelStatus.passing_summary.indexOf(summaryInfo.id.toString()) >= 0)?':white_check_mark:':':white_large_square:';
+                                text = text + '\n ' + flagText + '  '+ summaryInfo.id + '.  *' + summaryInfo.summary + '*';
+                            })
+                            text = text + '\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
+                            if ((channelStatusForReviewerResult.rowCount - 1)  == index) {
+                                util.botSay(text, message.channel);
+                            }
+                            util.updateStatus(1, 1, targetChannelList);
+                            getChannelListClient.end();
+                        });
                     });
                 })
             });
