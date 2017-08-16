@@ -25,9 +25,6 @@ MAIN.startController = function startController(cController) {
                     if(err) {
                         console.log(`Famous Quotes ERROR: ${err}`);
                     } else {
-                        console.dir(result);
-                        console.log(result.response.data[0].meigen[0]);
-                        console.log(result.response.data[0].auther[0]);
                         util.botSay(`「 *${result.response.data[0].meigen[0]}* 」\\n\\n　(by ${result.response.data[0].auther[0]})`, message.channel);
                     }
                 });
