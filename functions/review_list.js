@@ -31,8 +31,7 @@ MAIN.sendSummaryReviewList = function sendSummaryReviewList(statusResult, channe
         let selectAccount = config.sql.accountFromAccountId.format(accountId);
         ssrlClient.query(selectAccount, function(err, accountResult) {
             if(err) {
-                util.errorBotSay('レビュー一覧(サマリー)取得後のアカウント情報取得時にエラー発生: ' + err);
-                console.log(err);
+                console.log('レビュー一覧(サマリー)取得後のアカウント情報取得時にエラー発生: ' + err);
                 ssrlClient.end();
                 return;
             }
@@ -45,8 +44,7 @@ MAIN.sendSummaryReviewList = function sendSummaryReviewList(statusResult, channe
                 let selectSummaryList = config.sql.review.summaryList;
                 ssrlClient.query(selectSummaryList, function(err, summaryResult) {
                     if(err) {
-                        util.errorBotSay('レビュー一覧(サマリー)取得時にエラー発生: ' + err);
-                        console.log(err);
+                        console.log('レビュー一覧(サマリー)取得時にエラー発生: ' + err);
                         ssrlClient.end();
                         return;
                     }
@@ -74,16 +72,14 @@ function formatReviewListForChannel(statusResult, summaryResult, bot_message) {
         let selectChannelStatus = config.sql.review.channelStatus.format(message.channel);
         frlrfClient.query(selectChannelStatus, function(err, channelStatusResult) {
             if(err) {
-                util.errorBotSay('レビュー一覧(サマリー)取得時のchannelStatusResultでエラー発生: ' + err);
-                console.log(err);
+                console.log('レビュー一覧(サマリー)取得時のchannelStatusResultでエラー発生: ' + err);
                 frlrfClient.end();
                 return;
             }
             let selectAccountChannelReviewStatusForChannel = config.sql.review.accountChannelStatus.format(channelStatusResult.rows[0].channel_id);
             frlrfClient.query(selectAccountChannelReviewStatusForChannel, function(err, accountChannelReviewStatusResult) {
                 if(err) {
-                    util.errorBotSay('全ユーザーのステータス取得(サマリー)取得時にエラー発生: ' + err)
-                    console.log(err);
+                    console.log('全ユーザーのステータス取得(サマリー)取得時にエラー発生: ' + err);
                     frlrfClient.end();
                     return;
                 }
@@ -126,8 +122,7 @@ function formatReviewListForAccountChannel(statusResult, summaryResult, bot_mess
         let selectChannelCompositionFromAccountId = config.sql.channelCompositionFromAccountId.format(message.user);
         frlracClient.query(selectChannelCompositionFromAccountId, function(err, channelCompositionFromAccountIdResult) {
             if(err) {
-                util.errorBotSay('レビュー一覧(サマリー)取得時のchannelCompositionFromAccountIdResultでエラー発生: ' + err);
-                console.log(err);
+                console.log('レビュー一覧(サマリー)取得時のchannelCompositionFromAccountIdResultでエラー発生: ' + err);
                 frlracClient.end();
                 return;
             }
@@ -135,8 +130,7 @@ function formatReviewListForAccountChannel(statusResult, summaryResult, bot_mess
                 let selectAccountChannelReviewStatusForChannel = config.sql.review.accountChannelStatus.format(channelCompositionFromAccountIdResult.rows[0].channel_id);
                 frlracClient.query(selectAccountChannelReviewStatusForChannel, function(err, accountChannelReviewStatusResult) {
                     if(err) {
-                        util.errorBotSay('全ユーザーのステータス取得(サマリー)取得時にエラー発生: ' + err);
-                        console.log(err);
+                        console.log('全ユーザーのステータス取得(サマリー)取得時にエラー発生: ' + err);
                         frlracClient.end();
                         return;
                     }
@@ -341,23 +335,24 @@ function sendReviewSummaryListAll (message) {
                     return;
                 }
                 let text = '各班のレビュー状況です。\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
-                channelStatusForReviewerResult.rows.forEach((channelStatus, index) => {
-                    let groupId = channelStatus.group_id;
-                    let memberListText = ''
-                    let accountChannelStatus = config.sql.review.accountChannelStatus.format(channelStatus.channel_id)
-                    let getChannelListClient = new pg.Client(connectionString);
-                    getChannelListClient.connect((err) => {
-                        if (err) {
-                            console.log('error: ' + err);
+                let acsClient = new pg.Client(connectionString);
+                acsClient.connect((err) => {
+                    if (err) {
+                        console.log('error: ' + err);
+                    }
+                    let accountChannelStatus = config.sql.review.accountChannelStatusList
+                    acsClient.query(accountChannelStatus, function(err, allAccountStatusResult) {
+                        if(err) {
+                            console.log('班員一覧取得時にエラー発生: ' + err);
+                            acsClient.end();
+                            return;
                         }
-                        getChannelListClient.query(accountChannelStatus, function(err, allAccountStatusResult) {
-                            if(err) {
-                                console.log('班員一覧取得時にエラー発生: ' + err);
-                                getChannelListClient.end();
-                                return;
-                            }
+                        channelStatusForReviewerResult.rows.forEach((channelStatus, channelStatusIndex) => {
+                            let memberListText = ''
                             allAccountStatusResult.rows.forEach((AccountStatusResult, index, array) => {
-                                memberListText = memberListText + AccountStatusResult.name +', '
+                                if (AccountStatusResult.channel_id == channelStatus.channel_id) {
+                                    memberListText = memberListText + AccountStatusResult.name +', '
+                                }
                             })
                             memberListText = memberListText.substr( 0, memberListText.length-2 );
                             let channelName = channelStatus.name;
@@ -367,14 +362,15 @@ function sendReviewSummaryListAll (message) {
                                 text = text + '\n ' + flagText + '  '+ summaryInfo.id + '.  *' + summaryInfo.summary + '*';
                             })
                             text = text + '\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
-                            if ((channelStatusForReviewerResult.rowCount - 1)  == index) {
+                            if ((channelStatusForReviewerResult.rowCount - 1)  == channelStatusIndex) {
                                 util.botSay(text, message.channel);
                             }
-                            util.updateStatus(1, 1, targetChannelList);
-                            getChannelListClient.end();
                         });
+                        acsClient.end();
                     });
                 })
+                util.updateStatus(1, 1, targetChannelList);
+                srslaClient.end();
             });
         });
     });
