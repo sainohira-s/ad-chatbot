@@ -13,6 +13,47 @@ let request = require('request');
 
 let controller = Botkit.slackbot({
     debug: false,
+}).configureSlackApp(
+  {
+    clientId: process.env.clientId,
+    clientSecret: process.env.clientSecret,
+    scopes: ['bot'],
+  }
+);
+
+controller.setupWebserver("4040",function(err, webserver) {
+  controller.createWebhookEndpoints(controller.webserver);
+
+  controller.createOauthEndpoints(controller.webserver,function(err,req,res) {
+    if (err) {
+      res.status(500).send('ERROR: ' + err);
+    } else {
+      res.send('Success!');
+    }
+  });
+});
+
+controller.on('create_bot',function(bot,config) {
+
+  if (_bots[bot.config.token]) {
+    // already online! do nothing.
+  } else {
+    bot.startRTM(function(err) {
+
+      if (!err) {
+        trackBot(bot);
+      }
+
+      bot.startPrivateConversation({user: config.createdBy},function(err,convo) {
+        if (err) {
+          console.log(err);
+        } else {
+          convo.say('I am a bot that has just joined your team');
+          convo.say('You must now /invite me to a channel so that I can be of use!');
+        }
+      });
+    });
+  }
 });
 
 // function定義ファイルの読み込み
@@ -69,6 +110,82 @@ let manageController = require('./controller/manage.js').MANAGE;
 manageController.startController(connectionString, controller, channelWordDic);
 let famousQuotesController = require('./controller/famousQuotes.js').FAMOUSQUOTES;
 famousQuotesController.startController(controller);
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
+
+let jsonOkAndNg = {
+      "fallback": "Couldn't reply.",
+      "callback_id": "greeting",
+      "attachment_type": 'default',
+      "actions": [
+        {
+          "name": "ok",
+          "value": "OK",
+          "text": "OK",
+          "type": "button"
+        },{
+          "name": "ng",
+          "value": "NG",
+          "text": "NG",
+          "type": "button"
+        }
+      ]
+    }
+
+app.post('/slack/recieve', bodyParser.urlencoded({ extended: false }), (req, res) => {
+    const payload = JSON.parse(req.body.payload);
+    let list = [
+        {
+            id : '16-1',
+            text : '画面の遷移先と遷移先画面の画面IDが記載されているか'
+        },{
+            id : '16-2',
+            text : '表示されるエラーメッセージのエラーメッセージIDが記載されているか'
+        }
+    ]
+    list.forEach((questionInfo, Index) => {
+
+
+    })
+    let jsonList = [jsonQuestion1, {text: payload.actions[0].name}, jsonQuestion2, jsonOkAndNg]
+
+    res.json({
+        text: '押されたよ',
+        attachments: jsonList
+    });;
+    //console.log(JSON.parse(req.body.payload).channel.id)
+    console.log('■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■')
+});
+
+controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
+    let jsonQuestion1 = {
+            text: '`16-1`  画面の遷移先と遷移先画面の画面IDが記載されているか'
+        }
+    let jsonQuestion2 = {
+            text: '`16-2`  表示されるエラーメッセージのエラーメッセージIDが記載されているか'
+        }
+        
+    let jsonList = [jsonQuestion1, jsonOkAndNg, jsonQuestion2, jsonOkAndNg]
+    jsonList.push
+    bot.reply(message, {
+        "text": "1",
+        "attachments": jsonList
+    });
+})
+
+app.listen(3000);
+
+// Handle events related to the websocket connection to Slack
+controller.on('rtm_open',function(bot) {
+  console.log('** The RTM api just connected!');
+});
+
+controller.on('rtm_close',function(bot) {
+  console.log('** The RTM api just closed');
+  // you may want to attempt to re-open
+});
 
 controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
     // SQLクエリに影響する文字列を置換

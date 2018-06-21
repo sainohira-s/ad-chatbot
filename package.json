@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "botkit": "0.5.4",
+    "botkit": "*",
     "pg": "*",
     "node-schedule": "git://github.com/node-schedule/node-schedule.git",
     "config": "*",
-    "readline": "^1.3.0",
+    "readline": "*",
     "uuid": "*",
     "async": "*",
     "xml2js": "*"

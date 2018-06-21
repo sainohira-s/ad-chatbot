@@ -177,7 +177,7 @@ MAIN.accoutAccessCountUp = function accoutAccessCountUp() {
 */
 MAIN.botSay = function botSay(messageText, channel) {
     let tempMessage = String(messageText)
-    if ( tempMessage.match(/\\n/)) {
+    if (tempMessage.match(/\\n/)) {
         tempMessage = tempMessage.replace(/\\n/g,"\n");
     }
     bot.say({
