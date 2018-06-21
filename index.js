@@ -34,9 +34,6 @@ controller.setupWebserver("4040",function(err, webserver) {
 });
 
 controller.on('create_bot',function(bot,config) {
-
-    bot.startRTM(function(err) {
-    });
 });
 
 // function定義ファイルの読み込み
