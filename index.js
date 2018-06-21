@@ -17,6 +17,7 @@ let controller = Botkit.slackbot({
   {
     clientId: process.env.clientId,
     clientSecret: process.env.clientSecret,
+    interactive_replies: true,
     scopes: ['bot'],
   }
 );
@@ -46,7 +47,7 @@ let scMsg = require('./functions/scheduleMessage.js');
 let botPlacement = require('./functions/botPlacement.js');
 
 let bot = controller.spawn({
-    token: process.env.token
+    token: process.env.token,
 }).startRTM(function(err, bot, payload){
     if (err) {
         throw new Error(err);
