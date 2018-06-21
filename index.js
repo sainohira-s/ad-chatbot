@@ -35,9 +35,6 @@ controller.setupWebserver("4040",function(err, webserver) {
 
 controller.on('create_bot',function(bot,config) {
 
-  if (_bots[bot.config.token]) {
-    // already online! do nothing.
-  } else {
     bot.startRTM(function(err) {
 
       if (!err) {
@@ -53,7 +50,6 @@ controller.on('create_bot',function(bot,config) {
         }
       });
     });
-  }
 });
 
 // function定義ファイルの読み込み
@@ -174,8 +170,8 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
         "attachments": jsonList
     });
 })
-
 app.listen(3000);
+
 
 // Handle events related to the websocket connection to Slack
 controller.on('rtm_open',function(bot) {
