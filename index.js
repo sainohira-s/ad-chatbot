@@ -17,7 +17,7 @@ let controller = Botkit.slackbot({
   {
     clientId: process.env.clientId,
     clientSecret: process.env.clientSecret,
-    interactive_replies: true,
+    redirectUri: "http://127.0.0.1:4040",
     scopes: ['bot'],
   }
 );
