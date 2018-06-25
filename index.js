@@ -17,7 +17,6 @@ let controller = Botkit.slackbot({
   {
     clientId: process.env.clientId,
     clientSecret: process.env.clientSecret,
-    redirectUri: "http://127.0.0.1:4040",
     scopes: ['bot'],
   }
 );
@@ -35,6 +34,26 @@ controller.setupWebserver("4040",function(err, webserver) {
 });
 
 controller.on('create_bot',function(bot,config) {
+
+//   if (_bots[bot.config.token]) {
+//     // already online! do nothing.
+//   } else {
+//     bot.startRTM(function(err) {
+
+//       if (!err) {
+//         trackBot(bot);
+//       }
+
+//       bot.startPrivateConversation({user: config.createdBy},function(err,convo) {
+//         if (err) {
+//           console.log(err);
+//         } else {
+//           convo.say('I am a bot that has just joined your team');
+//           convo.say('You must now /invite me to a channel so that I can be of use!');
+//         }
+//       });
+//     });
+//   }
 });
 
 // function定義ファイルの読み込み
@@ -47,7 +66,7 @@ let scMsg = require('./functions/scheduleMessage.js');
 let botPlacement = require('./functions/botPlacement.js');
 
 let bot = controller.spawn({
-    token: process.env.token,
+    token: process.env.token
 }).startRTM(function(err, bot, payload){
     if (err) {
         throw new Error(err);
@@ -115,37 +134,52 @@ let jsonOkAndNg = {
       ]
     }
 
-app.post('/slack/recieve', bodyParser.urlencoded({ extended: false }), (req, res) => {
-    const payload = JSON.parse(req.body.payload);
-    let list = [
-        {
-            id : '16-1',
-            text : '画面の遷移先と遷移先画面の画面IDが記載されているか'
-        },{
-            id : '16-2',
-            text : '表示されるエラーメッセージのエラーメッセージIDが記載されているか'
-        }
-    ]
-    list.forEach((questionInfo, Index) => {
+// app.post('/slack/receive', bodyParser.urlencoded({ extended: false }), (req, res) => {
+//     let list = {
+//         "": ""
+//     }
+//     const payload = JSON.parse(req.body.payload);
+//         let jsonQuestion1 = {
+//             text: '`16-1` 画面の遷移先と遷移先画面の画面IDが記載されているか'
+//         }
+//     let jsonQuestion2 = {
+//             text: '`16-2` 表示されるエラーメッセージのエラーメッセージIDが記載されているか'
+//         }
+        
+//     let jsonList = [jsonQuestion1, {text: payload.actions[0].name}, jsonQuestion2, jsonOkAndNg]
 
+//     res.json({
+//         text: '押されたよ',
+//         attachments: jsonList
+//     });
 
-    })
-    let jsonList = [jsonQuestion1, {text: payload.actions[0].name}, jsonQuestion2, jsonOkAndNg]
+//     //console.log(JSON.parse(req.body.payload).channel.id)
+// });
 
-    res.json({
-        text: '押されたよ',
-        attachments: jsonList
-    });;
-    //console.log(JSON.parse(req.body.payload).channel.id)
-    console.log('■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■')
+// Handle events related to the websocket connection to Slack
+controller.on('rtm_open',function(bot) {
+  console.log('** The RTM api just connected!');
 });
 
-controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
+controller.on('rtm_close',function(bot) {
+  console.log('** The RTM api just closed');
+  // you may want to attempt to re-open
+});
+
+controller.on('interactive_message_callback', function(bot, message) {
+  var users_answer = message.actions[0].name;
+  if (message.callback_id == "test_button") {
+    bot.replyInteractive(message, "あなたは「" + users_answer + "」を押しました");
+  }
+});
+
+
+controller.hears('sainohira', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
     let jsonQuestion1 = {
-            text: '`16-1`  画面の遷移先と遷移先画面の画面IDが記載されているか'
+            text: '`16-1` 画面の遷移先と遷移先画面の画面IDが記載されているか'
         }
     let jsonQuestion2 = {
-            text: '`16-2`  表示されるエラーメッセージのエラーメッセージIDが記載されているか'
+            text: '`16-2` 表示されるエラーメッセージのエラーメッセージIDが記載されているか'
         }
         
     let jsonList = [jsonQuestion1, jsonOkAndNg, jsonQuestion2, jsonOkAndNg]
@@ -155,8 +189,8 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
         "attachments": jsonList
     });
 })
-app.listen(3000);
 
+app.listen(3000);
 
 // Handle events related to the websocket connection to Slack
 controller.on('rtm_open',function(bot) {
