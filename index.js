@@ -21,7 +21,7 @@ let controller = Botkit.slackbot({
   }
 );
 
-controller.setupWebserver("4040",function(err, webserver) {
+controller.setupWebserver(process.env.port,function(err, webserver) {
   controller.createWebhookEndpoints(controller.webserver);
 
   controller.createOauthEndpoints(controller.webserver,function(err,req,res) {
@@ -134,27 +134,27 @@ let jsonOkAndNg = {
       ]
     }
 
-// app.post('/slack/receive', bodyParser.urlencoded({ extended: false }), (req, res) => {
-//     let list = {
-//         "": ""
-//     }
-//     const payload = JSON.parse(req.body.payload);
-//         let jsonQuestion1 = {
-//             text: '`16-1` 画面の遷移先と遷移先画面の画面IDが記載されているか'
-//         }
-//     let jsonQuestion2 = {
-//             text: '`16-2` 表示されるエラーメッセージのエラーメッセージIDが記載されているか'
-//         }
+app.post('/slack/receive', bodyParser.urlencoded({ extended: false }), (req, res) => {
+    let list = {
+        "": ""
+    }
+    const payload = JSON.parse(req.body.payload);
+        let jsonQuestion1 = {
+            text: '`16-1` 画面の遷移先と遷移先画面の画面IDが記載されているか'
+        }
+    let jsonQuestion2 = {
+            text: '`16-2` 表示されるエラーメッセージのエラーメッセージIDが記載されているか'
+        }
         
-//     let jsonList = [jsonQuestion1, {text: payload.actions[0].name}, jsonQuestion2, jsonOkAndNg]
+    let jsonList = [jsonQuestion1, {text: payload.actions[0].name}, jsonQuestion2, jsonOkAndNg]
 
-//     res.json({
-//         text: '押されたよ',
-//         attachments: jsonList
-//     });
+    res.json({
+        text: '押されたよ',
+        attachments: jsonList
+    });
 
-//     //console.log(JSON.parse(req.body.payload).channel.id)
-// });
+    //console.log(JSON.parse(req.body.payload).channel.id)
+});
 
 // Handle events related to the websocket connection to Slack
 controller.on('rtm_open',function(bot) {
