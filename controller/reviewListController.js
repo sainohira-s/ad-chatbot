@@ -63,7 +63,7 @@ MAIN.startController = function startController(cConnectionString, cController, 
         }
         
         bot.reply(message, {
-            "text": "どのレビュー一覧を確認しますか？",
+            "text": "どのフェーズのレビュー状況を確認しますか？",
             "attachments": [jsonList]
         });
     });
