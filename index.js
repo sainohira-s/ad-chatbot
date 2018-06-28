@@ -11,6 +11,15 @@ let pg = require('pg');
 let async = require('async');
 let request = require('request');
 
+// function定義ファイルの読み込み
+let util = require('./functions/utility.js').UTIL;
+let reviewList = require('./functions/reviewListFunction.js').REVIEWLIST;
+let review = require('./functions/reviewFunction.js').REVIEW;
+let selfMsg = require('./functions/selfishMessage.js');
+let reviewCheck = require('./functions/review_check.js').REVIEWCHECK;
+let scMsg = require('./functions/scheduleMessage.js');
+let botPlacement = require('./functions/botPlacement.js');
+
 let controller = Botkit.slackbot({
     debug: false,
 }).configureSlackApp(
@@ -20,59 +29,6 @@ let controller = Botkit.slackbot({
     scopes: ['bot'],
   }
 );
-
-controller.setupWebserver(process.env.port,function(err, webserver) {
-  controller.createWebhookEndpoints(controller.webserver);
-
-  controller.createOauthEndpoints(controller.webserver,function(err,req,res) {
-    if (err) {
-      res.status(500).send('ERROR: ' + err);
-    } else {
-      res.send('Success!');
-    }
-  });
-});
-
-controller.on('create_bot',function(bot,config) {
-
-//   if (_bots[bot.config.token]) {
-//     // already online! do nothing.
-//   } else {
-//     bot.startRTM(function(err) {
-
-//       if (!err) {
-//         trackBot(bot);
-//       }
-
-//       bot.startPrivateConversation({user: config.createdBy},function(err,convo) {
-//         if (err) {
-//           console.log(err);
-//         } else {
-//           convo.say('I am a bot that has just joined your team');
-//           convo.say('You must now /invite me to a channel so that I can be of use!');
-//         }
-//       });
-//     });
-//   }
-});
-
-// function定義ファイルの読み込み
-let util = require('./functions/utility.js').UTIL;
-let selfMsg = require('./functions/selfishMessage.js');
-let review = require('./functions/review.js').REVIEW;
-let reviewCheck = require('./functions/review_check.js').REVIEWCHECK;
-let reviewList = require('./functions/review_list.js').REVIEWLIST;
-let scMsg = require('./functions/scheduleMessage.js');
-let botPlacement = require('./functions/botPlacement.js');
-
-let bot = controller.spawn({
-    token: process.env.token
-}).startRTM(function(err, bot, payload){
-    if (err) {
-        throw new Error(err);
-    }
-    scMsg.says(bot);
-});
 
 // 各班ごとに受け取ったワードを一時的に格納するディレクトリ
 let channelWordDic = {}
@@ -104,93 +60,137 @@ client.connect((err) => {
 });
 
 // controller定義ファイルの読み込み
-let cancelController = require('./controller/cancel.js').CANCEL;
+let cancelController = require('./controller/cancelController.js').CANCEL;
 cancelController.startController(connectionString, controller, channelWordDic);
-let manageController = require('./controller/manage.js').MANAGE;
+let manageController = require('./controller/manageController.js').MANAGE;
 manageController.startController(connectionString, controller, channelWordDic);
-let famousQuotesController = require('./controller/famousQuotes.js').FAMOUSQUOTES;
+let famousQuotesController = require('./controller/famousQuotesController.js').FAMOUSQUOTES;
 famousQuotesController.startController(controller);
+let reviewListController = require('./controller/reviewListController.js').REVIEWLIST;
+reviewListController.startController(connectionString, controller, channelWordDic);
+let reviewController = require('./controller/reviewController.js').REVIEW;
+reviewController.startController(connectionString, controller, channelWordDic);
 
-const express = require('express');
-const bodyParser = require('body-parser');
-const app = express();
-
-let jsonOkAndNg = {
-      "fallback": "Couldn't reply.",
-      "callback_id": "greeting",
-      "attachment_type": 'default',
-      "actions": [
-        {
-          "name": "ok",
-          "value": "OK",
-          "text": "OK",
-          "type": "button"
-        },{
-          "name": "ng",
-          "value": "NG",
-          "text": "NG",
-          "type": "button"
-        }
-      ]
+let bot = controller.spawn({
+    token: process.env.token
+}).startRTM(function(err, bot, payload){
+    if (err) {
+        throw new Error(err);
     }
-
-app.post('/slack/receive', bodyParser.urlencoded({ extended: false }), (req, res) => {
-    let list = {
-        "": ""
-    }
-    const payload = JSON.parse(req.body.payload);
-        let jsonQuestion1 = {
-            text: '`16-1` 画面の遷移先と遷移先画面の画面IDが記載されているか'
-        }
-    let jsonQuestion2 = {
-            text: '`16-2` 表示されるエラーメッセージのエラーメッセージIDが記載されているか'
-        }
-        
-    let jsonList = [jsonQuestion1, {text: payload.actions[0].name}, jsonQuestion2, jsonOkAndNg]
-
-    res.json({
-        text: '押されたよ',
-        attachments: jsonList
-    });
-
-    //console.log(JSON.parse(req.body.payload).channel.id)
+    scMsg.says(bot);
 });
 
-// Handle events related to the websocket connection to Slack
-controller.on('rtm_open',function(bot) {
-  console.log('** The RTM api just connected!');
-});
+controller.setupWebserver(process.env.port,function(err, webserver) {
+  controller.createWebhookEndpoints(controller.webserver)
+  controller.createHomepageEndpoint(controller.webserver)
 
-controller.on('rtm_close',function(bot) {
-  console.log('** The RTM api just closed');
-  // you may want to attempt to re-open
+  controller.createOauthEndpoints(controller.webserver,function(err,req,res) {
+    if (err) {
+      res.status(500).send('ERROR: ' + err);
+    } else {
+      res.send('Success!');
+    }
+  });
 });
 
 controller.on('interactive_message_callback', function(bot, message) {
-  var users_answer = message.actions[0].name;
-  if (message.callback_id == "test_button") {
-    bot.replyInteractive(message, "あなたは「" + users_answer + "」を押しました");
-  }
+    // **************
+    // レビュー一覧操作
+    // **************
+    if ('reviewList' == message.callback_id){
+        // レビュー一覧のタイトルを表示
+        reviewList.setProperty(bot, message, channelWordDic, targetChannelList);
+        reviewList.sendReviewTitleList('reviewListDetails');
+        return;
+    } else if ('reviewListDetails' == message.callback_id) {
+        // レビュー一覧の詳細を表示 
+        reviewList.setProperty(bot, message, channelWordDic, targetChannelList);
+        reviewList.sendReviewDetailList();
+        return;
+    }
+
+    // **************
+    // レビュー回答操作
+    // **************
+    if ('startReviewList' == message.callback_id) {
+        // レビュー一覧のタイトルを表示
+        reviewList.setProperty(bot, message, channelWordDic, targetChannelList);
+        reviewList.sendReviewTitleList('startReviewListDetails');
+        return;
+    } else if ('startReviewListDetails' == message.callback_id) {
+        // レビュー開始
+        review.setProperty(bot, message, channelWordDic, targetChannelList);
+        review.sendReviewQuestionDetailList();
+        return;
+    } else if ('nextStepReview' == message.callback_id) {
+        // 「次へ」押下後の処理
+        review.setProperty(bot, message, channelWordDic, targetChannelList);
+        review.sendReviewQuestionDetailListForNextStep();
+        return;
+    } else if ('checkedReview' == message.callback_id) {
+        // 「OK」「NG」押下後の処理
+        review.setProperty(bot, message, channelWordDic, targetChannelList);
+        review.sendReviewQuestionDetailListForAns();
+        return;
+    }
+
+    bot.replyInteractive(message, {
+        text: '...',
+        attachments: [
+            {
+                title: 'My buttons',
+                callback_id: '123',
+                attachment_type: 'default',
+                actions: [
+                    {
+                        "name":"yes",
+                        "text": "Yes!",
+                        "value": "yes",
+                        "type": "button",
+                    },
+                    {
+                       "text": "No!",
+                        "name": "no",
+                        "value": "delete",
+                        "style": "danger",
+                        "type": "button",
+                        "confirm": {
+                          "title": "Are you sure?",
+                          "text": "This will do something!",
+                          "ok_text": "Yes",
+                          "dismiss_text": "No"
+                        }
+                    }
+                ]
+            }
+        ]
+    });
+
 });
 
 
-controller.hears('sainohira', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
-    let jsonQuestion1 = {
-            text: '`16-1` 画面の遷移先と遷移先画面の画面IDが記載されているか'
-        }
-    let jsonQuestion2 = {
-            text: '`16-2` 表示されるエラーメッセージのエラーメッセージIDが記載されているか'
-        }
-        
-    let jsonList = [jsonQuestion1, jsonOkAndNg, jsonQuestion2, jsonOkAndNg]
-    jsonList.push
-    bot.reply(message, {
-        "text": "1",
-        "attachments": jsonList
-    });
-})
+controller.on('create_bot',function(bot,config) {
 
-app.listen(3000);
+//   if (_bots[bot.config.token]) {
+//     // already online! do nothing.
+//   } else {
+//     bot.startRTM(function(err) {
+
+//       if (!err) {
+//         trackBot(bot);
+//       }
+
+//       bot.startPrivateConversation({user: config.createdBy},function(err,convo) {
+//         if (err) {
+//           console.log(err);
+//         } else {
+//           convo.say('I am a bot that has just joined your team');
+//           convo.say('You must now /invite me to a channel so that I can be of use!');
+//         }
+//       });
+//     });
+//   }
+});
 
 // Handle events related to the websocket connection to Slack
 controller.on('rtm_open',function(bot) {

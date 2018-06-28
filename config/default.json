@@ -21,6 +21,12 @@
       "name": "メッセージ全般に反応"
      }
   },
+  "color": {
+    "selectingColor": "#00ff99",
+    "selectedColor": "#3AA3E3",
+    "resultColor": "#003399",
+    "attentionColor": "#990000"
+  },
   "sql":{
     "message":{
       "search": "SELECT ms.message, ms.type_id FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE '{0}' LIKE '%' || key.keyword || '%';"
@@ -47,7 +53,8 @@
     "channelCompositionFromAccountId": "SELECT channel_id from channel_composition WHERE account_id = '{0}';",
     "channelFromReviewerFlg":"SELECT * FROM channel WHERE reviewer_flg={0}",
     "review":{
-      "summaryList":"SELECT id, summary FROM Review_Summary ORDER BY id;",
+      "summaryList":"SELECT * FROM Review_Summary ORDER BY id;",
+      "ReviewTItleById":"SELECT * FROM review_title INNER JOIN review_summary ON review_title.category_id = review_summary.category_id where review_summary.id = {0};",
       "summaryFromKeyword":"SELECT * FROM review_summary_keyword as rsk INNER JOIN review_summary as rs ON rsk.summary_id = rs.id WHERE '{0}' LIKE '%' || rsk.keyword || '%';",
       "summaryFromId":"SELECT * FROM review_summary_keyword as rsk INNER JOIN review_summary as rs ON rsk.summary_id = rs.id WHERE rs.id = '{0}';",
       "channelStatus":"SELECT * FROM channel as c INNER JOIN review_channel_status as rcs ON c.channel_id = rcs.channel_id WHERE c.reviewer_flg=false AND c.channel_id = '{0}'",
@@ -55,7 +62,7 @@
       "accountChannelStatus":"SELECT a.account_id, a.name, passing_summary, passing_question, current_summary_id FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id WHERE channel_id = '{0}';",
       "accountChannelStatusList":"SELECT a.account_id, a.name, passing_summary, passing_question, current_summary_id, channel_id FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id;",
       "accountChannelStatusFromAccountId":"SELECT a.account_id, cc.channel_id, a.name, passing_summary, passing_question, current_summary_id, current_question FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id WHERE a.account_id = '{0}';",
-      "questionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rt.category_id = {0} ORDER BY RT.id DESC, question_number DESC;",
+      "questionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rt.category_id = {0}",
       "okQuestionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rt.category_id = {0} AND RQ.id = ANY(ARRAY[{1}]) ORDER BY RT.id DESC, question_number DESC;",
       "ngQuestionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE  rt.category_id = {0} AND NOT RQ.id = ANY(ARRAY[{1}]) ORDER BY RT.id DESC, question_number DESC;",
       "questionList":"SELECT rs.id as summary_id, rs.summary, rt.title_number, rt.title, rq.id as question_id, question, rq.question_number  FROM (review_summary_keyword as rsk INNER JOIN review_summary as rs ON summary_id = rs.id) INNER JOIN review_title as rt ON rs.category_id = rt.category_id INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE '{0}' LIKE '%' || rsk.keyword || '%' ORDER BY summary_id DESC, rq.title_id, question_number;",

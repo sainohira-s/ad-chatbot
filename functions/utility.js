@@ -205,3 +205,90 @@ MAIN.isTargetChannel = function isTargetChannel(targetChannelList) {
     }
     return false;
 }
+
+MAIN.interactiveJsonGenerator = function interactiveJsonGenerator(text, attachment) {
+    let attachmentsJson = [];
+    let actions = attachment.actions;
+    if (actions.length > 5) {
+        let actionsJson = [];
+        let tmpAttachment = JSON.parse(JSON.stringify(attachment));
+        actions.forEach((action, index) => {
+            actionsJson.push(action);
+            if ((index + 1) % 5 == 0){
+                tmpAttachment = JSON.parse(JSON.stringify(attachment));
+                tmpAttachment.actions = actionsJson;
+                attachmentsJson.push(tmpAttachment);
+                actionsJson = [];
+            }
+        });
+        tmpAttachment = JSON.parse(JSON.stringify(attachment));
+        tmpAttachment.actions = actionsJson;
+        attachmentsJson.push(tmpAttachment);
+    } else {
+        attachmentsJson.push(attachment);
+    }
+    let interactiveJson = {
+                    "text": text,
+                    "attachments": attachmentsJson
+                }
+    return interactiveJson;
+}
+
+MAIN.attachmentJsonGeneratorForAction = function attachmentJsonGenerator(callback_id, color, actions) {
+    let attachmentJson = {
+                    "fallback": "ボタン操作のできない端末またはブラウザです。",
+                    "callback_id": callback_id,
+                    "color": color,
+                    "actions": actions
+                }
+    return attachmentJson;
+}
+
+MAIN.attachmentJsonGeneratorForText = function attachmentJsonGenerator(text, color) {
+    let attachmentJson = {
+                    "text": text,
+                    "color": color
+                }
+    return attachmentJson;
+}
+
+
+MAIN.buttonActionJsonGenerator = function buttonActionJsonGenerator(name, value, text) {
+    let actionJson = {
+                    "name": name,
+                    "value": value,
+                    "text": text,
+                    "type": "button"
+                }
+    return actionJson;
+}
+
+MAIN.actionsJsonGenerator = function actionsJsonGenerator(actions) {
+
+}
+
+MAIN.arrayToString = function arrayToString(array) {
+    let str = ""
+    array.forEach((passingQuestion, index) => {
+        str += "'"+ passingQuestion + "',"
+    })
+    return str.slice(0, -1);
+}
+
+MAIN.allQuestionsPassCheck = function allQuestionsPassCheck(passingQuestionList, questionList) {
+    let flag = false;
+    questionList.some((questionInfo) => {
+        passingQuestionList.some((passingQuestion) => {
+            flag = false;
+            console.log(passingQuestion)
+            console.log(questionInfo.question_id)
+            if (questionInfo.question_id == passingQuestion.match(/[0-9]*$/)[0]|0){
+                flag = true;
+                return flag;
+            }
+        })
+        console.log(flag)
+        return false == flag
+    })
+    return flag
+}

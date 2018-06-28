@@ -29,7 +29,7 @@ exports.joinChannel = function(bBot, bMessage, targetChannelList) {
                 jcClient.query(insertChannelRelation, (err, result) => {
                     if(err) {
                         jcClient.end();
-                        throw err;
+                        return;
                     }
                     let selectChannels = config.sql.channels;
                     jcClient.query(selectChannels, (err, channelsResult) => {
