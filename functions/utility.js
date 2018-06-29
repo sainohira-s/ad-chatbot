@@ -253,12 +253,13 @@ MAIN.attachmentJsonGeneratorForText = function attachmentJsonGenerator(text, col
 }
 
 
-MAIN.buttonActionJsonGenerator = function buttonActionJsonGenerator(name, value, text) {
+MAIN.buttonActionJsonGenerator = function buttonActionJsonGenerator(name, value, text, style) {
     let actionJson = {
                     "name": name,
                     "value": value,
                     "text": text,
-                    "type": "button"
+                    "type": "button",
+                    "style": style
                 }
     return actionJson;
 }

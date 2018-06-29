@@ -165,7 +165,6 @@ controller.on('interactive_message_callback', function(bot, message) {
             }
         ]
     });
-
 });
 
 

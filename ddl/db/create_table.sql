@@ -88,6 +88,7 @@ CREATE TABLE review_summary (
     id              int          PRIMARY KEY,
     summary         varchar(200),
     category_id     int,
+    type_id     int,
     FOREIGN KEY (category_id) REFERENCES review_Title_Category (id)
 );
 

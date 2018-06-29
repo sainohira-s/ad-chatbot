@@ -44,17 +44,17 @@ MAIN.startController = function startController(cConnectionString, cController, 
             "color": config.color.selectingColor,
             "actions": [
                         {
-                "name": "Screen",
+                "name": "1",
                 "value": "画面設計",
                 "text": "画面設計",
                 "type": "button"
                 },{
-                "name": "Test",
+                "name": "2",
                 "value": "結合テスト設計",
                 "text": "結合テスト設計",
                 "type": "button"
                 },{
-                "name": "Program",
+                "name": "3",
                 "value": "プログラム設計",
                 "text": "プログラム設計",
                 "type": "button"

@@ -35,34 +35,85 @@ MAIN.sendReviewTitleList = function sendReviewTitleList(specifyCallBackId) {
         if (err) {
             console.log('error: ' + err);
         }
-        let selectSummaryList = config.sql.review.summaryList;
+        let typeId = message.actions[0].name
+        console.log(typeId)
+        let selectSummaryList = config.sql.review.summaryListByTypeId.format(typeId);
         ssrlClient.query(selectSummaryList, function(err, summaryResult) {
             if (err) {
                 console.log('レビュー一覧(サマリー)取得時にエラー発生: ' + err);
                 ssrlClient.end();
                 return;
             }
-            var summaryInfoList = summaryResult.rows.filter(info =>{
-                if ('Screen' == message.actions[0].name) {
-                    // 画面設計
-                    return 1 == info.type_id;
-                } else if ('Test' == message.actions[0].name){
-                    // 結合テスト設計
-                    return 2 == info.type_id;
-                } else if ('Program' == message.actions[0].name){
-                    // プログラム設計
-                    return 3 == info.type_id;
+            let selectQuestionListFromSummaryType = config.sql.review.questionListFromSummaryType.format(typeId);
+            ssrlClient.query(selectQuestionListFromSummaryType, function(err, questionListResult) {
+                if (err) {
+                    console.log('レビュー一覧(質問一覧)取得時にエラー発生: ' + err);
+                    ssrlClient.end();
+                    return;
                 }
-                return false;
+                let selectAccountChannelStatus = config.sql.review.accountChannelStatus.format(message.channel);
+                ssrlClient.query(selectAccountChannelStatus, function(err, accountChannelStatusResult) {
+                    if (err) {
+                        console.log('パスされたレビュー項目取得時にエラー発生: ' + err);
+                        ssrlClient.end();
+                        return;
+                    }
+                    let questionGroupList = []
+                    let questionGroup = []
+                    let summaryId = 0
+                    questionListResult.rows.forEach((questionInfo, index) => {
+                        if (questionInfo.summary_id != summaryId && index != 0) {
+                            questionGroupList.push(questionGroup)
+                            questionGroup = []
+                        }
+                        questionGroup.push(questionInfo)
+                        summaryId = questionInfo.summary_id;
+                    })
+                    questionGroupList.push(questionGroup)
+
+                    let passingSummaryList = [];
+                    accountChannelStatusResult.rows.forEach((accountInfo, index) => {
+                        let passingSummaryForAccount = [];
+                        let accountPassingQuestion = accountInfo.passing_question;
+                        questionGroupList.forEach((questionGroup) => {
+                            let flag = false;
+                            questionGroup.some((questionInfo) => {
+                                accountPassingQuestion.some((passingQuestion) => {
+                                    flag = questionInfo.question_id == passingQuestion.match(/[0-9]*$/)[0]|0;
+                                    return flag;
+                                })
+                                return false == flag;
+                            })
+                            passingSummaryForAccount.push(flag);
+                        })
+                        passingSummaryList.push(passingSummaryForAccount);
+                    });
+
+                    let tmpPassingSummary = [];
+                    passingSummaryList.forEach((passingSummary) => {
+                        if (tmpPassingSummary.length != 0) {
+                            tmpPassingSummary = tmpPassingSummary.map((summaryStatus, index) => {
+                                return summaryStatus && passingSummary[index]
+                            })
+                        } else {
+                            tmpPassingSummary = passingSummary
+                        }
+                    })
+
+                    var actionsJson = [];
+                    summaryResult.rows.forEach((summaryInfo, index) => {
+                        let checkText = '';
+                        if (tmpPassingSummary[index]) {
+                            checkText = ':white_check_mark:'
+                        }
+                        actionsJson.push(util.buttonActionJsonGenerator(String(summaryInfo.id), summaryInfo.summary, checkText + summaryInfo.summary, ""));
+                    })
+                    var attachmentJson = util.attachmentJsonGeneratorForAction(specifyCallBackId, config.color.selectingColor, actionsJson)
+                    var interactiveJson = util.interactiveJsonGenerator('レビュー状況を確認したいタイトルを選択してください。', attachmentJson)
+                    bot.reply(message, interactiveJson);
+                    ssrlClient.end();
+                });
             });
-            var actionsJson = [];
-            summaryInfoList.forEach((summaryInfo, index) => {
-                actionsJson.push(util.buttonActionJsonGenerator(String(summaryInfo.id), summaryInfo.summary, summaryInfo.summary));
-            })
-            var attachmentJson = util.attachmentJsonGeneratorForAction(specifyCallBackId, config.color.selectingColor, actionsJson)
-            var interactiveJson = util.interactiveJsonGenerator('レビュー項目を選択してください。', attachmentJson)
-            bot.reply(message, interactiveJson);
-            ssrlClient.end();
         });
     });
 }
@@ -76,73 +127,70 @@ MAIN.sendReviewDetailList = function sendReviewDetailList(statusResult, channelI
             console.log('error: ' + err);
         }
         let selectQuestionList = config.sql.review.questionListFromSummaryId.format(message.actions[0].name);
+        console.log(selectQuestionList)
         ssrlClient.query(selectQuestionList, function(err, questionListResult) {
             if(err) {
                 console.log('レビュー一覧(詳細)取得時にエラー発生: ' + err);
                 ssrlClient.end();
                 return;
             }
-            // let text = '';
-            // let tmpTitle = '';
-            // summaryResult.rows.forEach((result, index)=>{
-            //     if (tmpTitle != result.title) {
-            //         if (text != '') {
-            //             text += '```\n'
-            //         }
-            //         tmpTitle = result.title;
-            //         text += '```■ ' + tmpTitle + '\n'
-            //     }
-            //     const question = result.question;
-            //     text += '　　' + result.question_number + '. ' + question.replace(/\\n/g,"\n") + '\n';
-            // })
-            // text += '```'
             
             let selectAccontChannel = config.sql.review.accountChannelStatus.format(message.channel);
             ssrlClient.query(selectAccontChannel, function(err, accountsStatusResult) {
                 if(err) {
-                    console.log('レビュー一覧(詳細)取得時にエラー発生: ' + err);
+                    console.log('アカウントのレビューチェック状況取得時にエラー発生: ' + err);
                     ssrlClient.end();
                     return;
                 }
-                let questionList = questionListResult.rows[0].mach((questionInfo) => {
-                    return questionInfo.title_number;
+                let questionList = questionListResult.rows;
+                let attachmentJson = message.original_message.attachments;
+                attachmentJson.length = 1;
+                attachmentJson[0].color = config.color.selectedColor;
+                attachmentJson[0].actions.map((action) => {
+                    if (action.name == message.actions[0].name) {
+                        action.style = "primary";
+                    } else {
+                        action.style = "";
+                    }
+                    return action;
                 })
-                accountsStatusResult.rows[0].forEach((accoutInfo, index) => {
+                attachmentJson.push({
+                    text: 'レビューチェック完了メンバーは以下のとおりです。',
+                    color: config.color.resultColor
+                })
+
+                accountsStatusResult.rows.forEach((accountInfo, index) => {
                     let accountPassingQuestion = accountInfo.passing_question;
-                    accountPassingQuestion.forEach((passingQuestion) => {
-                        questionList.forEach((questionInfo, index) => {
-                            let flag = false;
-                            if (questionInfo.title_number == message.action[0].name) {
-                                flag = questionInfo.question_id == passingQuestion.match(/[0-9]*$/)[0]|0;
-                            }
+                    let flag = false;
+                    questionList.some((questionInfo, index) => {
+                        accountPassingQuestion.some((passingQuestion) => {
+                            flag = questionInfo.question_id == passingQuestion.match(/[0-9]*$/)[0]|0;
+                            return flag;
                         })
-    
-                        
-                    })                    
+                        return false == flag;
+                    });
+
+                    if (flag) {
+                        attachmentJson.push({
+                            text: '  ・' + accountInfo.name,
+                            color: config.color.resultColor
+                        })
+                    }
                 });
+
+                if (attachmentJson.length == 2) {
+                    attachmentJson[1] = {
+                        text: 'レビューチェックを完了している方はいません。',
+                        color: config.color.resultColor
+                    }
+                }
+
+                bot.replyInteractive(message, {
+                    text: message.original_message.text,
+                    attachments: attachmentJson
+                })
+                ssrlClient.end();
             });
-    
-            let text = '';
-            let interactiveJson = message.original_message;
-            interactiveJson.attachments.push({
-                text:'',
-                color: config.color.resultColor
-            });
-            bot.replyInteractive(message, {
-                text: message.original_message.text,
-                attachments: [{
-                    text: ':white_check_mark: ' + message.actions[0].value,
-                    color: config.color.selectedColor,
-                }]
-            })
-            // bot.reply(message, {
-            //     text: "",
-            //     attachments: [{
-            //         text: text,
-            //         color: config.color.resultColor
-            //     }]
-            // });
-            ssrlClient.end();
         });
     });
 }

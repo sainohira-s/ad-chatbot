@@ -54,6 +54,7 @@
     "channelFromReviewerFlg":"SELECT * FROM channel WHERE reviewer_flg={0}",
     "review":{
       "summaryList":"SELECT * FROM Review_Summary ORDER BY id;",
+      "summaryListByTypeId":"SELECT * FROM Review_Summary WHERE type_id = {0} ORDER BY id;",
       "ReviewTItleById":"SELECT * FROM review_title INNER JOIN review_summary ON review_title.category_id = review_summary.category_id where review_summary.id = {0};",
       "summaryFromKeyword":"SELECT * FROM review_summary_keyword as rsk INNER JOIN review_summary as rs ON rsk.summary_id = rs.id WHERE '{0}' LIKE '%' || rsk.keyword || '%';",
       "summaryFromId":"SELECT * FROM review_summary_keyword as rsk INNER JOIN review_summary as rs ON rsk.summary_id = rs.id WHERE rs.id = '{0}';",
@@ -67,6 +68,7 @@
       "ngQuestionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE  rt.category_id = {0} AND NOT RQ.id = ANY(ARRAY[{1}]) ORDER BY RT.id DESC, question_number DESC;",
       "questionList":"SELECT rs.id as summary_id, rs.summary, rt.title_number, rt.title, rq.id as question_id, question, rq.question_number  FROM (review_summary_keyword as rsk INNER JOIN review_summary as rs ON summary_id = rs.id) INNER JOIN review_title as rt ON rs.category_id = rt.category_id INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE '{0}' LIKE '%' || rsk.keyword || '%' ORDER BY summary_id DESC, rq.title_id, question_number;",
       "questionListFromSummaryId":"SELECT rs.id as summary_id, rs.summary, rt.title_number, rt.title, rq.id as question_id, question, rq.question_number FROM review_summary as rs INNER JOIN review_title as rt ON rs.category_id = rt.category_id INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rs.id = {0} ORDER BY rq.title_id, question_number;",
+      "questionListFromSummaryType":"SELECT rs.id as summary_id, rs.summary, rt.title_number, rt.title, rq.id as question_id, question, rq.question_number FROM review_summary as rs INNER JOIN review_title as rt ON rs.category_id = rt.category_id INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE type_id = {0} ORDER BY rs.id, rq.title_id, question_number;",
       "summaryAndQuestionListFromAccountId":"SELECT ac.account_id, ac.name as account_name, ch.channel_id, ch.name as channel_name, racs.passing_summary as a_passing_summary, racs.passing_question as a_passing_question, rcs.passing_summary as c_passing_summary, rcs.passing_question as c_passing_question FROM account as ac INNER JOIN channel_composition as cc ON ac.account_id = cc.account_id INNER JOIN review_account_channel_Status as racs ON cc.id = racs.id INNER JOIN channel as ch ON ch.channel_id = cc.channel_id INNER JOIN review_channel_status as rcs ON ch.channel_id = rcs.channel_id WHERE ch.channel_id = '{0}';",
       "update":{
         "channelStatus":"UPDATE review_channel_status SET {0} WHERE channel_id = '{1}'",
