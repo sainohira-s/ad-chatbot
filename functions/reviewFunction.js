@@ -101,6 +101,19 @@ MAIN.sendReviewQuestionDetailList = function sendReviewQuestionDetailList() {
                         attachmentsJson.push(attachmentForAction);
                     }
                 })
+
+                if (!attachmentsJson[attachmentsJson.length -1].actions || attachmentsJson[attachmentsJson.length -1].actions[0].value != "NextStep") {
+                    let actionsJsonForNextStep = [{
+                        "name": String(questionInfo.summary_id) +'_'+ String(questionInfo.title_number),
+                        "text": "クリア",
+                        "value": "Clear",
+                        "type": "button",
+                        "style": "denger"
+                    }]
+                    let attachmentForNextStep = util.attachmentJsonGeneratorForAction('clearReview', config.color.attentionColor, actionsJsonForNextStep);
+                    attachmentsJson.push(attachmentForNextStep);
+                }
+
                 bot.reply(message, {
                     text: '以下のチェック項目を確認し、回答してください。 (計:' +　questionListResult.rows.length + '問 )',
                     attachments: attachmentsJson
@@ -137,7 +150,9 @@ MAIN.sendReviewQuestionDetailListForNextStep = function sendReviewQuestionDetail
                 }
                 let attachmentsJson = []
                 let tmpTitle = '';
+                let categoryId = "";
                 questionListResult.rows.some((questionInfo) => {
+                    categoryId = questionInfo.category_id;
                     if (tmpTitle != questionInfo.title) {
                         if (tmpTitle != '') {
                             let actionsJsonForNextStep = [{
@@ -184,11 +199,24 @@ MAIN.sendReviewQuestionDetailListForNextStep = function sendReviewQuestionDetail
                                 "type": "button",
                                 "style": "primary"
                             }]
-                        actionsJson[0].name = String(questionInfo.summary_id) + '_' + String(questionInfo.question_id);
+                        actionsJson[0].name = String(questionInfo.summary_id) + '_' + String(questionInfo.category_id);
                         let attachmentForAction = util.attachmentJsonGeneratorForAction('checkedReview', config.color.selectingColor, actionsJson);
                         attachmentsJson.push(attachmentForAction);
                     }
                 })
+
+                if (!attachmentsJson[attachmentsJson.length -1].actions || attachmentsJson[attachmentsJson.length -1].actions[0].value != "NextStep") {
+                    let actionsJsonForNextStep = [{
+                        "name": String(summaryId) +'_'+ String(categoryId),
+                        "text": "クリア",
+                        "value": "Clear",
+                        "type": "button",
+                        "style": "denger"
+                    }]
+                    let attachmentForNextStep = util.attachmentJsonGeneratorForAction('clearReview', config.color.attentionColor, actionsJsonForNextStep);
+                    attachmentsJson.push(attachmentForNextStep);
+                }
+
                 bot.replyInteractive(message, {
                     text: '以下のチェック項目を確認し、回答してください。 (計:' +　questionListResult.rows.length + '問 )',
                     attachments: attachmentsJson
@@ -260,6 +288,83 @@ MAIN.sendReviewQuestionDetailListForAns = function sendReviewQuestionDetailListF
                 bot.replyInteractive(message, interactiveJson);
                 ssrlClient.end();
             });
+        });
+    });
+}
+
+// Clearボタン押下時の処理
+MAIN.sendReviewQuestionDetailListForClear = function sendReviewQuestionDetailListForClear(statusResult, channelId, bot_message) {
+    let ssrlClient = new pg.Client(connectionString);
+    ssrlClient.connect((err) => {
+        if (err) {
+            console.log('error: ' + err);
+        }
+        let accountId = message.user
+        let summaryId = message.actions[0].name.match(/[0-9]/)[0]|0;
+        let categoryId = message.actions[0].name.match(/[0-9]*$/)[0]|0;
+        let passingId = summaryId + '_' + questionNumber;
+        let select = config.sql.review.accountChannelStatusFromAccountId.format(accountId)
+        ssrlClient.query(select, function(err, questionPassingResult) {
+            if(err) {
+                console.log('回答状況取得時にエラー発生: ' + err);
+                ssrlClient.end();
+                return;
+            }
+            
+            let passingQuestionList = questionPassingResult.rows[0].passing_question;
+
+            // ユーザーの回答状況を更新
+            let select = config.sql.review.questionListForCategoryId.format(categoryId);
+            ssrlClient.query(select, function(err, questionListResult) {
+                if(err) {
+                    console.log('タイトル時にエラー発生: ' + err);
+                    ssrlClient.end();
+                    return;
+                }
+                let questionList = passingQuestionList;
+                questionListResult.rows.forEach((question) => {
+                    passingQuestionList.some((passingQuestion, index) => {
+                        let isSame = question.question_id == passingQuestion.match(/[0-9]*$/)[0]|0;
+                        if (isSame) {
+                            questionList.splice(index, 1);
+                        }
+                        return isSame;
+                    })    
+                })
+
+                // ユーザーの回答状況を更新
+                let update = config.sql.review.update.accountChannelPassingQuestion.format(util.arrayToString(questionList), accountId);
+                ssrlClient.query(update, function(err, result) {
+                    if(err) {
+                        console.log('回答状況更新時にエラー発生: ' + err);
+                        ssrlClient.end();
+                        return;
+                    }
+                    let interactiveJson = message.original_message
+                    let attachments = interactiveJson.attachments
+                    let flag = false;
+                    attachments = attachments.map((attachment) => {
+                        let attachmentJson = JSON.parse(JSON.stringify(attachment));
+                        if (attachment.actions) {
+                            attachment.actions.forEach((action, index) => {
+                                if (action.name == passingId) {
+                                    if (false == flag) {
+                                        attachmentJson = {
+                                            "text": '`' + message.actions[0].value + '`',
+                                            "color": config.color.resultColor
+                                        }
+                                    } 
+                                    flag = true;
+                                }
+                            })
+                        }
+                        return attachmentJson;
+                    })
+                    interactiveJson.attachments = attachments
+                    bot.replyInteractive(message, interactiveJson);
+                    ssrlClient.end();
+                });
+            });            
         });
     });
 }

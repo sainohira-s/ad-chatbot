@@ -132,6 +132,11 @@ controller.on('interactive_message_callback', function(bot, message) {
         review.setProperty(bot, message, channelWordDic, targetChannelList);
         review.sendReviewQuestionDetailListForAns();
         return;
+    } else if ("clearReview" == message.callback_id) {
+        // 「クリア」押下後の処理
+        review.setProperty(bot, message, channelWordDic, targetChannelList);
+        review.sendReviewQuestionDetailListForClear();
+        return;
     }
 
     bot.replyInteractive(message, {
