@@ -339,7 +339,6 @@ function displayForReviewer(bot, message, ssrlClient, summaryResult, questionLis
         channelGroup.forEach((channelInfo) => {
             // 各アカウントの回答状況からサマリーあたりの回答状況を確認する
             let passingSummaryList = [];
-            let currentChannelName = ""
             channelInfo.some((accountInfo) => {
                 let passingSummaryForAccount = [];
                 let accountPassingQuestion = accountInfo.passing_question;

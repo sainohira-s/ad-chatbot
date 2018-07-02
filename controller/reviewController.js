@@ -37,7 +37,7 @@ MAIN.startController = function startController(cConnectionString, cController, 
         });
     });
 
-    controller.hears(['rs','start review'], 'ambient,direct_message,direct_mention,mention', (bot, message) => {
+    controller.hears(['rs','start review'], 'direct_message', (bot, message) => {
         let jsonList = {
             "fallback": "ボタン操作のできない端末かブラウザです。",
             "callback_id": "startReviewList",
