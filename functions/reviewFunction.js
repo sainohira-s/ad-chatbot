@@ -49,19 +49,14 @@ MAIN.sendReviewQuestionDetailList = function sendReviewQuestionDetailList() {
                     ssrlClient.end();
                     return;
                 }
+
                 let attachmentsJson = []
                 let tmpTitle = '';
                 questionListResult.rows.some((questionInfo) => {
                     if (tmpTitle != questionInfo.title) {
                         if (tmpTitle != '') {
-                            let actionsJsonForNextStep = [{
-                                                "name": String(questionInfo.summary_id) +'_'+ String(questionInfo.title_number),
-                                                "text": "次へ",
-                                                "value": "NextStep",
-                                                "type": "button"
-                                            }]
-                            let attachmentForNextStep = util.attachmentJsonGeneratorForAction('nextStepReview', config.color.attentionColor, actionsJsonForNextStep);
-                            attachmentsJson.push(attachmentForNextStep);
+                            let name = String(questionInfo.summary_id) +'_'+ String(questionInfo.title_number)
+                            attachmentsJson.push(buttonAttachmentGenarator(name, '次へ', 'NextStep', '', 'nextStepReview', config.color.attentionColor));
                             return true;
                         }
                         tmpTitle = questionInfo.title
@@ -75,7 +70,7 @@ MAIN.sendReviewQuestionDetailList = function sendReviewQuestionDetailList() {
                     let passingQuestionList = questionPassingResult.rows[0].passing_question;
                     let passingFlag = false;
                     passingQuestionList.some((passingQuestion) => {
-                        let summaryId = passingQuestion.match(/[0-9]/)[0]|0;
+                        let summaryId = passingQuestion.match(/[0-9]*/)[0]|0;
                         let questionId= passingQuestion.match(/[0-9]*$/)[0]|0;
                         if (summaryId == questionInfo.summary_id) {
                             if (questionId == questionInfo.question_id){
@@ -89,29 +84,16 @@ MAIN.sendReviewQuestionDetailList = function sendReviewQuestionDetailList() {
                         let attachmentForText = util.attachmentJsonGeneratorForText('`OK`' , config.color.resultColor);
                         attachmentsJson.push(attachmentForText);
                     } else {
-                        let actionsJson = [{
-                                "name":"",
-                                "text": "OK",
-                                "value": "OK",
-                                "type": "button",
-                                "style": "primary"
-                            }]
-                        actionsJson[0].name = String(questionInfo.summary_id) + '_' + String(questionInfo.question_id);
-                        let attachmentForAction = util.attachmentJsonGeneratorForAction('checkedReview', config.color.selectingColor, actionsJson);
-                        attachmentsJson.push(attachmentForAction);
+                        let name = String(questionInfo.summary_id) + '_' + String(questionInfo.question_id);
+                        attachmentsJson.push(buttonAttachmentGenarator(name, 'OK', 'OK', 'primary', 'checkedReview', config.color.selectingColor));
                     }
                 })
 
+                let clearSummaryId = questionListResult.rows[0].summary_id;
+                let clearCategoryId = questionListResult.rows[0].category_id;
                 if (!attachmentsJson[attachmentsJson.length -1].actions || attachmentsJson[attachmentsJson.length -1].actions[0].value != "NextStep") {
-                    let actionsJsonForNextStep = [{
-                        "name": String(questionInfo.summary_id) +'_'+ String(questionInfo.title_number),
-                        "text": "クリア",
-                        "value": "Clear",
-                        "type": "button",
-                        "style": "denger"
-                    }]
-                    let attachmentForNextStep = util.attachmentJsonGeneratorForAction('clearReview', config.color.attentionColor, actionsJsonForNextStep);
-                    attachmentsJson.push(attachmentForNextStep);
+                    let name = String(clearSummaryId) + '_' + String(clearCategoryId)
+                    attachmentsJson.push(buttonAttachmentGenarator(name, 'クリア', 'Clear', 'danger', 'clearReview', config.color.resultColor));
                 }
 
                 bot.reply(message, {
@@ -132,7 +114,7 @@ MAIN.sendReviewQuestionDetailListForNextStep = function sendReviewQuestionDetail
         if (err) {
             console.log('error: ' + err);
         }
-        let summaryId = message.actions[0].name.match(/[0-9]/)[0]|0;
+        let summaryId = message.actions[0].name.match(/[0-9]*/)[0]|0;
         let titleNumber = message.actions[0].name.match(/[0-9]*$/)[0]|0;
         let select = config.sql.review.accountChannelStatusFromAccountId.format(message.user)
         ssrlClient.query(select, function(err, questionPassingResult) {
@@ -154,18 +136,10 @@ MAIN.sendReviewQuestionDetailListForNextStep = function sendReviewQuestionDetail
                 questionListResult.rows.some((questionInfo) => {
                     categoryId = questionInfo.category_id;
                     if (tmpTitle != questionInfo.title) {
-                        if (tmpTitle != '') {
-                            let actionsJsonForNextStep = [{
-                                                "name": String(questionInfo.summary_id) +'_'+ String(questionInfo.title_number),
-                                                "text": "次へ",
-                                                "value": "NextStep",
-                                                "type": "button"
-                                            }]
-                            let attachmentForNextStep = util.attachmentJsonGeneratorForAction('nextStepReview', config.color.attentionColor, actionsJsonForNextStep);
-                            if (titleNumber < questionInfo.title_number) {
-                                attachmentsJson.push(attachmentForNextStep);
-                                return true;
-                             }
+                        if (tmpTitle != '' && titleNumber < questionInfo.title_number) {
+                            let name = String(questionInfo.summary_id) +'_'+ String(questionInfo.title_number)
+                            attachmentsJson.push(buttonAttachmentGenarator(name, '次へ', 'NextStep', '', 'nextStepReview', config.color.attentionColor));
+                            return true;
                         }
                         tmpTitle = questionInfo.title
                         let text = '■ *' + tmpTitle + '*'
@@ -178,7 +152,7 @@ MAIN.sendReviewQuestionDetailListForNextStep = function sendReviewQuestionDetail
                     let passingQuestionList = questionPassingResult.rows[0].passing_question;
                     let passingFlag = false;
                     passingQuestionList.some((passingQuestion) => {
-                        let summaryId = passingQuestion.match(/[0-9]/)[0]|0;
+                        let summaryId = passingQuestion.match(/[0-9]*/)[0]|0;
                         let questionId= passingQuestion.match(/[0-9]*$/)[0]|0;
                         if (summaryId == questionInfo.summary_id) {
                             if (questionId == questionInfo.question_id){
@@ -192,29 +166,14 @@ MAIN.sendReviewQuestionDetailListForNextStep = function sendReviewQuestionDetail
                         let attachmentForText = util.attachmentJsonGeneratorForText('`OK`' , config.color.resultColor);
                         attachmentsJson.push(attachmentForText);
                     } else {
-                        let actionsJson = [{
-                                "name":"",
-                                "text": "OK",
-                                "value": "OK",
-                                "type": "button",
-                                "style": "primary"
-                            }]
-                        actionsJson[0].name = String(questionInfo.summary_id) + '_' + String(questionInfo.category_id);
-                        let attachmentForAction = util.attachmentJsonGeneratorForAction('checkedReview', config.color.selectingColor, actionsJson);
-                        attachmentsJson.push(attachmentForAction);
+                        let name = String(questionInfo.summary_id) + '_' + String(questionInfo.question_id)
+                        attachmentsJson.push(buttonAttachmentGenarator(name, 'OK', 'OK', 'primary', 'checkedReview', config.color.selectingColor));
                     }
                 })
 
                 if (!attachmentsJson[attachmentsJson.length -1].actions || attachmentsJson[attachmentsJson.length -1].actions[0].value != "NextStep") {
-                    let actionsJsonForNextStep = [{
-                        "name": String(summaryId) +'_'+ String(categoryId),
-                        "text": "クリア",
-                        "value": "Clear",
-                        "type": "button",
-                        "style": "denger"
-                    }]
-                    let attachmentForNextStep = util.attachmentJsonGeneratorForAction('clearReview', config.color.attentionColor, actionsJsonForNextStep);
-                    attachmentsJson.push(attachmentForNextStep);
+                    let name = String(summaryId) +'_'+ String(categoryId)
+                    attachmentsJson.push(buttonAttachmentGenarator(name, 'クリア', 'Clear', 'danger', 'clearReview', config.color.resultColor));
                 }
 
                 bot.replyInteractive(message, {
@@ -235,7 +194,7 @@ MAIN.sendReviewQuestionDetailListForAns = function sendReviewQuestionDetailListF
             console.log('error: ' + err);
         }
         let accountId = message.user
-        let summaryId = message.actions[0].name.match(/[0-9]/)[0]|0;
+        let summaryId = message.actions[0].name.match(/[0-9]*/)[0]|0;
         let questionNumber = message.actions[0].name.match(/[0-9]*$/)[0]|0;
         let passingId = summaryId + '_' + questionNumber;
         let select = config.sql.review.accountChannelStatusFromAccountId.format(accountId)
@@ -258,6 +217,7 @@ MAIN.sendReviewQuestionDetailListForAns = function sendReviewQuestionDetailListF
 
             // ユーザーの回答状況を更新
             let update = config.sql.review.update.accountChannelPassingQuestion.format(util.arrayToString(passingQuestionList), accountId);
+            console.log(update)
             ssrlClient.query(update, function(err, result) {
                 if(err) {
                     console.log('回答状況更新時にエラー発生: ' + err);
@@ -300,9 +260,9 @@ MAIN.sendReviewQuestionDetailListForClear = function sendReviewQuestionDetailLis
             console.log('error: ' + err);
         }
         let accountId = message.user
-        let summaryId = message.actions[0].name.match(/[0-9]/)[0]|0;
+        let summaryId = message.actions[0].name.match(/[0-9]*/)[0]|0;
         let categoryId = message.actions[0].name.match(/[0-9]*$/)[0]|0;
-        let passingId = summaryId + '_' + questionNumber;
+        let passingId = summaryId + '_' + categoryId;
         let select = config.sql.review.accountChannelStatusFromAccountId.format(accountId)
         ssrlClient.query(select, function(err, questionPassingResult) {
             if(err) {
@@ -324,7 +284,7 @@ MAIN.sendReviewQuestionDetailListForClear = function sendReviewQuestionDetailLis
                 let questionList = passingQuestionList;
                 questionListResult.rows.forEach((question) => {
                     passingQuestionList.some((passingQuestion, index) => {
-                        let isSame = question.question_id == passingQuestion.match(/[0-9]*$/)[0]|0;
+                        let isSame = summaryId + '_' + question.question_id == passingQuestion;
                         if (isSame) {
                             questionList.splice(index, 1);
                         }
@@ -342,29 +302,45 @@ MAIN.sendReviewQuestionDetailListForClear = function sendReviewQuestionDetailLis
                     }
                     let interactiveJson = message.original_message
                     let attachments = interactiveJson.attachments
-                    let flag = false;
+                    let questionNumber = 0;
                     attachments = attachments.map((attachment) => {
-                        let attachmentJson = JSON.parse(JSON.stringify(attachment));
-                        if (attachment.actions) {
-                            attachment.actions.forEach((action, index) => {
-                                if (action.name == passingId) {
-                                    if (false == flag) {
-                                        attachmentJson = {
-                                            "text": '`' + message.actions[0].value + '`',
-                                            "color": config.color.resultColor
-                                        }
-                                    } 
-                                    flag = true;
-                                }
-                            })
+                        if (attachment.text && false == (attachment.text == '`OK`' || attachment.text.indexOf('■') != -1)) {
+                            questionNumber += 1
                         }
-                        return attachmentJson;
+                        console.log(questionNumber)
+                        if (attachment.text == '`OK`') {
+                            let actionsJson = [{
+                                "name":"",
+                                "text": "OK",
+                                "value": "OK",
+                                "type": "button",
+                                "style": "primary"
+                            }]
+                            actionsJson[0].name = String(summaryId) + '_' + String(questionListResult.rows[questionNumber-1].question_id);
+                            let attachmentForAction = util.attachmentJsonGeneratorForAction('checkedReview', config.color.selectingColor, actionsJson);
+                            return attachmentForAction;
+                        }
+                        return attachment;
                     })
                     interactiveJson.attachments = attachments
+                    attachments.forEach((attachment) => {
+                        console.log(attachment)
+                    })
                     bot.replyInteractive(message, interactiveJson);
                     ssrlClient.end();
                 });
             });            
         });
     });
+}
+
+function buttonAttachmentGenarator(name, text, value, style, callback_id, attachmentColor) {
+    let actionsJsonForClear = [{
+        "name": name,
+        "text": text,
+        "value": value,
+        "type": "button",
+        "style": style
+    }]
+    return util.attachmentJsonGeneratorForAction(callback_id, attachmentColor, actionsJsonForClear);
 }
