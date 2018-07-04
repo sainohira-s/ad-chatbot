@@ -59,8 +59,6 @@ client.connect((err) => {
 });
 
 // controller定義ファイルの読み込み
-let cancelController = require('./controller/cancelController.js').CANCEL;
-cancelController.startController(connectionString, controller, channelWordDic);
 let manageController = require('./controller/manageController.js').MANAGE;
 manageController.startController(connectionString, controller, channelWordDic);
 let famousQuotesController = require('./controller/famousQuotesController.js').FAMOUSQUOTES;
