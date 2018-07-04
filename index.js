@@ -16,7 +16,6 @@ let util = require('./functions/utility.js').UTIL;
 let reviewList = require('./functions/reviewListFunction.js').REVIEWLIST;
 let review = require('./functions/reviewFunction.js').REVIEW;
 let selfMsg = require('./functions/selfishMessage.js');
-let reviewCheck = require('./functions/review_check.js').REVIEWCHECK;
 let scMsg = require('./functions/scheduleMessage.js');
 let botPlacement = require('./functions/botPlacement.js');
 
