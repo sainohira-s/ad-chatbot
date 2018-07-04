@@ -233,98 +233,31 @@ controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, mess
                 client.end();
                 return;
             }
-            if (statusResult.rowCount > 0){
-                // 現在のステータスにより処理を分ける
-                switch (statusResult.rows[0].current_type_id) {
-                case config.messageType.message.id:
-                    // ノンステータス
-                    let selectMessage = config.sql.messageSearch.format(message.text)
-                    client.query(selectMessage, (err, resultMessage) => {
-                        if(err) {
-                            console.log('現在のステータスが0ときのメッセージ取得時にエラー発生: ' + err);
-                            client.end();
-                            return;
-                        }
-                        if (resultMessage.rowCount == 1){
-                            // Messageの持つステータスにより処理を分ける
-                            switch (resultMessage.rows[0].type_id) {
-                            case config.messageType.message.id:
-                                // 連続した対話が発生していない場合の処理
-                                if (message.event != 'ambient') {
-                                    // ボットに向けた発言に対する処理
-                                    selfMsg.replyMessage(bot, message, resultMessage);
-                                }
-                                break;
-                            case config.messageType.selfReviewList.id:
-                                // レビュー一覧に関する対話が発生している場合
-                                if (message.event != 'ambient') {
-                                    util.updateStatus(2, 2, targetChannelList);
-                                    reviewList.setProperty(bot, message, channelWordDic, targetChannelList)
-                                    review.reviewProcess(message, statusResult, channelId, resultMessage.rows[0].message[0])
-                                } else {
-                                    util.botSay('メンションもしくは、ダイレクトメッセージから始めてください。', message.channel);
-                                }
-                                break;
-                            case config.messageType.selfReviewCheck.id:
-                                // レビューチェックの対話がしている場合
-                                if (message.event == 'direct_message') {
-                                    util.updateStatus(3, 3, targetChannelList);
-                                    reviewList.setProperty(bot, message, channelWordDic, targetChannelList)
-                                    reviewCheck.setProperty(bot, message, channelWordDic, targetChannelList)
-                                    review.reviewProcess(message, statusResult, channelId, resultMessage.rows[0].message[0])
-                                } else {
-                                    util.botSay('ダイレクトメッセージからのみ利用可能です。', message.channel);
-                                }
-                                break;
-                            case config.messageType.regularWord.id:
-                                break;
-                            case config.messageType.channelMessage.id:
-                                selfMsg.replyMessage(bot, message, resultMessage);
-                            default :
-                            }
-                            client.end();
-                        } else if (resultMessage.rowCount > 1) {
-                            client.end();
-                            if (message.event != 'ambient') {
-                                util.botSay('(んー、なんと答えるのがべきなのか...。。:disappointed_relieved:)\n端的に話してくれると嬉しいな！', message.channel);
-                            }
+            // ノンステータス
+            let selectMessage = config.sql.messageSearch.format(message.text)
+            client.query(selectMessage, (err, resultMessage) => {
+                if(err) {
+                    console.log('現在のステータスが0ときのメッセージ取得時にエラー発生: ' + err);
+                    client.end();
+                    return;
+                }
+                client.end();
+                if (message.event != 'ambient') {
+                    request({
+                        url: 'https://api.a3rt.recruit-tech.co.jp/talk/v1/smalltalk',
+                        method: 'POST',
+                        form: { apikey: process.env.a3rt_talk_apikey, query: message.text },
+                        json:  true
+                    }, (err, response, body) => {
+                        console.log(body)
+                        if (body.status == 0) {
+                            bot.reply(message, `${body.results[0].reply}`);
                         } else {
-                            client.end();
-                            if (message.event != 'ambient') {
-                                request({
-                                    url: 'https://api.a3rt.recruit-tech.co.jp/talk/v1/smalltalk',
-                                    method: 'POST',
-                                    form: { apikey: process.env.a3rt_talk_apikey, query: message.text },
-                                    json:  true
-                                }, (err, response, body) => {
-                                    if (body.status == 0) {
-                                        bot.reply(message, `${body.results[0].reply}`);
-                                    } else {
-                                        console.log(`TalkAPI ERROR: ${err}`);
-                                    }
-                                });
-                            }
+                            console.log(`TalkAPI ERROR: ${err}`);
                         }
                     });
-                    break;
-                case config.messageType.selfReviewList.id:
-                    // レビューリスト確認機能操作中ステータス
-                    reviewList.setProperty(bot, message, channelWordDic, targetChannelList)
-                    review.reviewProcess(message, statusResult, channelId, null)
-                    client.end();
-                    break;
-                case config.messageType.selfReviewCheck.id:
-                    // レビューチェック開始
-                    reviewList.setProperty(bot, message, channelWordDic, targetChannelList)
-                    reviewCheck.setProperty(bot, message, channelWordDic, targetChannelList)
-                    review.reviewProcess(message, statusResult, channelId, null)
-                    client.end();
-                   break;
-                default: 
-                    client.end();
-                    break;
                 }
-            }
+            });
         });
     });
 });

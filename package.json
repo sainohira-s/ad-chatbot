@@ -11,7 +11,8 @@
     "readline": "*",
     "uuid": "*",
     "async": "*",
-    "xml2js": "*"
+    "xml2js": "*",
+    "date-utils": "*"
   },
   "scripts": {
     "test": "mocha \"Error\""

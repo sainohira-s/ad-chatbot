@@ -197,6 +197,7 @@ MAIN.sendReviewQuestionDetailListForAns = function sendReviewQuestionDetailListF
         let summaryId = message.actions[0].name.match(/[0-9]*/)[0]|0;
         let questionNumber = message.actions[0].name.match(/[0-9]*$/)[0]|0;
         let passingId = summaryId + '_' + questionNumber;
+        
         let select = config.sql.review.accountChannelStatusFromAccountId.format(accountId)
         ssrlClient.query(select, function(err, questionPassingResult) {
             if(err) {
@@ -206,6 +207,7 @@ MAIN.sendReviewQuestionDetailListForAns = function sendReviewQuestionDetailListF
             }
             
             let passingQuestionList = questionPassingResult.rows[0].passing_question;
+            console.log(passingQuestionList)
             let isSame = false;
             passingQuestionList.some((passingQuestion) => {
                 isSame = passingQuestion == passingId;

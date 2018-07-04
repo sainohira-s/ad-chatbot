@@ -293,7 +293,3 @@ MAIN.allQuestionsPassCheck = function allQuestionsPassCheck(passingQuestionList,
     })
     return flag
 }
-
-MAIN.passingQuestionCheck = function passingQuestionCheck(callback) {
-
-}

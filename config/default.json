@@ -62,7 +62,7 @@
       "channelStatusForReviewer":"SELECT * FROM channel as c INNER JOIN review_channel_status as rcs ON c.channel_id = rcs.channel_id WHERE c.reviewer_flg=false AND NOT c.channel_id = '{0}' ORDER BY name;",
       "accountChannelStatus":"SELECT a.account_id, a.name, passing_summary, passing_question, current_summary_id FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id WHERE channel_id = '{0}';",
       "accountChannelStatusList":"SELECT a.account_id, a.name account_name, passing_summary, passing_question, current_summary_id, c.channel_id, c.name channel_name FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id INNER JOIN channel as c ON cc.channel_id = c.channel_id ORDER BY c.name;",
-      "accountChannelStatusFromAccountId":"SELECT a.account_id, cc.channel_id, a.name, passing_summary, passing_question, current_summary_id, current_question FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id WHERE a.account_id = '{0}';",
+      "accountChannelStatusFromAccountId":"SELECT a.account_id, cc.channel_id, a.name, passing_summary, passing_question, current_summary_id, current_question FROM (account as a INNER JOIN channel_composition as cc ON a.account_id = cc.account_id) INNER JOIN review_account_channel_status as racs ON racs.id = cc.id WHERE a.account_id = '{0}' ORDER BY cc.register_date;",
       "questionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rt.category_id = {0}",
       "questionListForCategoryId":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rt.category_id = {0}",
       "okQuestionListForTitle":"SELECT rt.id as title_id, rt.title_number, rt.title, category_id, rq.id as question_id, rq.question_number, rq.question FROM review_title as rt INNER JOIN review_question as rq ON rt.id = rq.title_id WHERE rt.category_id = {0} AND RQ.id = ANY(ARRAY[{1}]) ORDER BY RT.id DESC, question_number DESC;",
@@ -75,7 +75,7 @@
         "channelStatus":"UPDATE review_channel_status SET {0} WHERE channel_id = '{1}'",
         "accountChannelStatus":"UPDATE review_account_channel_status SET {0} WHERE id = (SELECT id FROM channel_composition WHERE channel_id = '{1}' AND account_id = '{2}')",
         "channelPassingQuestion":"UPDATE review_channel_status SET passing_question = ARRAY[{0}] WHERE channel_id = '{1}'",
-        "accountChannelPassingQuestion":"UPDATE review_account_channel_status SET passing_question = ARRAY[{0}] WHERE id = (SELECT id FROM channel_composition WHERE account_id = '{1}' LIMIT 1 OFFSET 0);",
+        "accountChannelPassingQuestion":"UPDATE review_account_channel_status SET passing_question = ARRAY[{0}] WHERE id = (SELECT id FROM channel_composition WHERE account_id = '{1}' ORDER BY register_date LIMIT 1 OFFSET 0);",
         "channelPassingSummary":"UPDATE review_channel_status SET passing_summary = ARRAY[{0}] WHERE channel_id = '{1}'",
         "accountChannelPassingSummary":"UPDATE review_account_channel_status SET passing_summary = ARRAY[{0}] WHERE id = (SELECT id FROM channel_composition WHERE channel_id = '{1}' AND account_id = '{2}')"
       }
@@ -91,7 +91,7 @@
       "channelStatus":"INSERT INTO channel_status VALUES ('{0}', 1, 1);",
       "reviewChannelStatus":"INSERT INTO review_channel_status VALUES ('{0}', 0, 0, ARRAY[0], ARRAY['0_0']);",
       "account":"INSERT INTO account VALUES ('{0}', '{1}', false, 0);",
-      "channelComposition":"INSERT INTO channel_composition VALUES ('{0}', '{1}', '{2}');",
+      "channelComposition":"INSERT INTO channel_composition VALUES ('{0}', '{1}', '{2}', '{3}');",
       "accountChannelStatus":"INSERT INTO account_channel_status VALUES ('{0}', 1, 1, 0);",
       "reviewAccountChannelStatus":"INSERT INTO review_account_channel_status VALUES ('{0}', 0, 0, ARRAY[0], ARRAY['0_0']);"
     }
