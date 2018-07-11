@@ -2,6 +2,7 @@
 let config = require('config');
 let pg = require('pg');
 let uuid = require('uuid/v4');
+require('date-utils');
 
 let conString = process.env.connectionstring;
 let bot;
@@ -83,7 +84,7 @@ function insertAccountInfo(channelInfo) {
                                     iaiClient.end();
                                     throw err;
                                 }
-                                let insertAccountInfo = config.sql.insert.channelComposition.format(uuidStr, channelInfo.id, memberId) +
+                                let insertAccountInfo = config.sql.insert.channelComposition.format(uuidStr, channelInfo.id, memberId, (new Date()).toFormat('YYYYMMDD HH24:MI:SS')) +
                                                         config.sql.insert.accountChannelStatus.format(uuidStr) + 
                                                         config.sql.insert.reviewAccountChannelStatus.format(uuidStr)
                                 if (resultAccount.rowCount == 0) {

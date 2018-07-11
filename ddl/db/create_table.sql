@@ -13,10 +13,18 @@ DROP TABLE review_Title_Category;
 DROP TABLE keyword;
 DROP TABLE message;
 DROP TABLE message_type;
+DROP TABLE enquete_result;
 
 -- generate UUIDを使用するためにEXTENSION追加
 CREATE EXTENSION "pgcrypto";
 CREATE EXTENSION "uuid-ossp";
+
+-- アンケート結果
+CREATE TABLE enquete_result (
+    id     serial         PRIMARY KEY,
+    title  varchar(300)   NOT NULL,
+    result varchar(300)   NOT NULL
+);
 
 -- メッセージ関連テーブル
 CREATE TABLE message_type (
@@ -56,6 +64,7 @@ CREATE TABLE channel_composition (
     id              varchar(51)    PRIMARY KEY,
     channel_id      varchar(20)    NOT NULL,
     account_id      varchar(20)    NOT NULL,
+    register_date   varchar(20)    NOT NULL,
     FOREIGN KEY (channel_id) REFERENCES channel (channel_id),
     FOREIGN KEY (account_id) REFERENCES account (account_id)
 );

@@ -13,7 +13,7 @@
       "name": "レビューチェック"
      },
      "regularWord":{
-      "id": 4,
+      "id": 0,
       "name": "メッセージ配信"
      },
      "channelMessage":{
@@ -38,13 +38,15 @@
       "search": "SELECT * FROM channel_composition WHERE '{0}' = account_id AND '{1}' = channel_id;",
       "insert": "INSERT INTO channel_composition(id, account_id, channel_id) VALUES (gen_random_uuid(), '{0}', '{1}');"
     },
+    "enqueteResult":"SELECT * FROM enquete_result WHERE title = '{0}'",
     "messageSearch": "SELECT ms.message, ms.type_id FROM message as ms JOIN keyword as key ON ms.id = key.message_id WHERE '{0}' LIKE '%' || key.keyword || '%';",
     "schedule":{
       "messageList": "SELECT key.keyword, ms.message, ms.type_id FROM message ms JOIN keyword key ON ms.id = key.message_id WHERE {0} = ms.type_id;"
     },
-    "accountFromAccountId":"SELECT * FROM account WHERE account_id = '{0}'",
-    "accountForReviewerByAccountId":"SELECT * FROM account WHERE reviewer_flg = true AND account_id = '{0}'",
-    "accountFromAccountName":"SELECT * FROM account WHERE name = '{0}'",
+    "accountFromAccountId":"SELECT * FROM account WHERE account_id = '{0}';",
+    "accountForReviewerByAccountId":"SELECT * FROM account WHERE reviewer_flg = true AND account_id = '{0}';",
+    "accountFromAccountName":"SELECT * FROM account WHERE name = '{0}';",
+    "accounts":"SELECT * FROM account;",
     "channels": "SELECT channel_id, name, reviewer_flg FROM channel;",
     "channel": "SELECT * FROM channel WHERE channel_id = '{0}';",
     "channelStatus": "SELECT * FROM channel_status as cs WHERE channel_id = '{0}'",
@@ -84,7 +86,8 @@
       "accessCountUpDirectMessage": "UPDATE account SET access_count = access_count + 1 WHERE account_id = '{0}';",
       "accessCountUpChannelMessage": "UPDATE account_channel_status SET access_count = access_count + 1 WHERE id = (SELECT id from channel_composition WHERE channel_id = '{0}' AND account_id = '{1}');",
       "channelStatus": "UPDATE channel_status SET {0} WHERE channel_id = '{1}';",
-      "accountChannelStatus": "UPDATE account_channel_status SET {0} WHERE id = (SELECT id from channel_composition WHERE channel_id = '{1}' AND account_id = '{2}');"
+      "accountChannelStatus": "UPDATE account_channel_status SET {0} WHERE id = (SELECT id from channel_composition WHERE channel_id = '{1}' AND account_id = '{2}');",
+      "enqueteResult": "UPDATE enquete_result SET result = '{0}' WHERE title = '{1}'"
     },
     "insert":{
       "channel":"INSERT INTO channel(channel_id, name, reviewer_flg) VALUES ('{0}', '{1}', false);",
@@ -93,7 +96,8 @@
       "account":"INSERT INTO account VALUES ('{0}', '{1}', false, 0);",
       "channelComposition":"INSERT INTO channel_composition VALUES ('{0}', '{1}', '{2}', '{3}');",
       "accountChannelStatus":"INSERT INTO account_channel_status VALUES ('{0}', 1, 1, 0);",
-      "reviewAccountChannelStatus":"INSERT INTO review_account_channel_status VALUES ('{0}', 0, 0, ARRAY[0], ARRAY['0_0']);"
+      "reviewAccountChannelStatus":"INSERT INTO review_account_channel_status VALUES ('{0}', 0, 0, ARRAY[0], ARRAY['0_0']);",
+      "enqueteResult":"INSERT INTO enquete_result(title, result) VALUES ('{0}', '{1}');"
     }
   }
 }

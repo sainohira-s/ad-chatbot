@@ -74,6 +74,7 @@ let bot = controller.spawn({
     if (err) {
         throw new Error(err);
     }
+    console.log('入った');
     scMsg.says(bot);
 });
 
@@ -136,61 +137,51 @@ controller.on('interactive_message_callback', function(bot, message) {
         return;
     }
 
-    bot.replyInteractive(message, {
-        text: '...',
-        attachments: [
-            {
-                title: 'My buttons',
-                callback_id: '123',
-                attachment_type: 'default',
-                actions: [
-                    {
-                        "name":"yes",
-                        "text": "Yes!",
-                        "value": "yes",
-                        "type": "button",
-                    },
-                    {
-                       "text": "No!",
-                        "name": "no",
-                        "value": "delete",
-                        "style": "danger",
-                        "type": "button",
-                        "confirm": {
-                          "title": "Are you sure?",
-                          "text": "This will do something!",
-                          "ok_text": "Yes",
-                          "dismiss_text": "No"
-                        }
-                    }
-                ]
+    if ('schedule') {
+        client = new pg.Client(connectionString);
+        client.connect((err) => {
+            if (err) {
+                console.log('error: ' + err);
+                return;
             }
-        ]
-    });
+            util.setProperty(bot, message, client);
+            let select = config.sql.enqueteResult.format(message.original_message.text);
+            client.query(select, (err, selectResult) => {
+                if (err) {
+                    util.botSay('現在のステータス取得時にエラー発生: ' + err);
+                    client.end();
+                    return;
+                }
+                let resultJsons = JSON.parse(selectResult.rows[0].result);
+                resultJsons[message.actions[0].name].count = resultJsons[message.actions[0].name].count + 1;
+                console.log(JSON.stringify(resultJsons));
+
+                let update = config.sql.update.enqueteResult.format(JSON.stringify(resultJsons), message.original_message.text);
+                client.query(update, (err, result) => {
+                    if (err) {
+                        util.botSay('現在のステータス取得時にエラー発生: ' + err);
+                        client.end();
+                        return;
+                    }
+                    bot.replyInteractive(message, {
+                        text: selectResult.rows[0].title,
+                        attachments:[{
+                            "text": resultJsons[message.actions[0].name].text,
+                            "color": config.color.selectedColor
+                        }]
+                    })
+                });
+            });
+        });
+        return;
+    }
+
+    bot.replyInteractive(message, 'エラーです。@sainohira に問い合わせてくれると有難いです。');
 });
 
 
 controller.on('create_bot',function(bot,config) {
 
-//   if (_bots[bot.config.token]) {
-//     // already online! do nothing.
-//   } else {
-//     bot.startRTM(function(err) {
-
-//       if (!err) {
-//         trackBot(bot);
-//       }
-
-//       bot.startPrivateConversation({user: config.createdBy},function(err,convo) {
-//         if (err) {
-//           console.log(err);
-//         } else {
-//           convo.say('I am a bot that has just joined your team');
-//           convo.say('You must now /invite me to a channel so that I can be of use!');
-//         }
-//       });
-//     });
-//   }
 });
 
 // Handle events related to the websocket connection to Slack
@@ -204,6 +195,89 @@ controller.on('rtm_close',function(bot) {
 });
 
 controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
+
+    // let title = "朝食は何派?"
+    // let infoJson = JSON.parse('{"cron":"0 0 16 * * *","selects":[{"text":"パン"},{"text":"ごはん"},{"text":"グラノーラ"},{"text":"食べない"}]}');
+    // let actions = []
+    // let enqResultJsons = []
+    // infoJson.selects.forEach((select, index) => {
+    //     let action = {
+    //             "name": index,
+    //             "value": index,
+    //             "text": select.text,
+    //             "type": "button"
+    //         }
+    //     enqResultJsons.push({"text":select.text, "count": 0})
+    //     actions.push(action);
+    // })
+
+    // // client = new pg.Client(connectionString);
+    // // client.connect((err) => {
+    // //     if (err) {
+    // //         console.log('error: ' + err);
+    // //         return;
+    // //     }
+    // //     let insert = config.sql.insert.enqueteResult.format(title, JSON.stringify(enqResultJsons));
+    // //     client.query(insert, (err, result) => {
+    // //         if (err) {
+    // //             util.botSay('現在のステータス取得時にエラー発生: ' + err);
+    // //             client.end();
+    // //             return;
+    // //         }
+    // //     });
+    // // });
+
+    // bot.say({
+    //     channel: message.channel,
+    //     text: title,
+    //     username: '',
+    //     icon_url: '',
+    //     attachments:[{
+    //         "fallback": "ボタン操作のできない端末またはブラウザです。",
+    //         "callback_id": 'schedule',
+    //         "color": config.color.selectingColor,
+    //         "actions": actions
+    //     }]
+    // });
+    // if (message) return;
+
+    request({
+        //url: 'https://script.google.com/macros/s/AKfycbwxRAxt9FN3wzlvZpV4BUxx5KF3-u8-FrumEkJJxbpq/exec?jsonStr0=\{"name":"aaaa","count":5\}\&access_token='+ process.env.google_token,
+        url: 'https://script.google.com/macros/s/AKfycbwxRAxt9FN3wzlvZpV4BUxx5KF3-u8-FrumEkJJxbpq/exec?dataJson=\{"data":[\{"text":"パン","count":4\},\{"text":"ごはん","count":3\},\{"text":"グラノーラ","count":11\},\{"text":"食べない","count":2\}]\}\&channels=\{"channels":[\{"name":"C67KTAYMP"\},\{"name":"C6EEUQG0L"\},\{"name":"CBLA1FZRN"\}]\}\&title=朝食は何派\?\&token=xoxb-124751069958-378165134453-hLcUARW2c7tT1Zi2U57YxyZL\&access_token='+ process.env.google_token,
+        method: 'GET',
+        json:  true
+    }, (err, response, body) => {
+        if (err) {
+            request({
+                url: 'https://www.googleapis.com/oauth2/v4/token',
+                method: 'POST',
+                form:{
+                    grant_type:'refresh_token',
+                    client_id:'',
+                    client_secret:'',
+                    refresh_token:process.env.refresh_token
+                },
+                json:  true
+            }, (err, response, body) => {
+                console.log(('■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■'));
+                console.log(body.access_token);
+                process.env.g_token = body.access_token
+                let url = 'https://script.google.com/macros/s/AKfycbwxRAxt9FN3wzlvZpV4BUxx5KF3-u8-FrumEkJJxbpq/exec?dataJson=\{"text":"パン","count":4\}\\&access_token='+ process.env.g_token
+                console.log(url)
+                request({
+                    url: url,
+                    method: 'GET',
+                    json:  true
+                }, (err, response, body) => {
+                    console.log(err);
+                    console.log(response);
+                    console.log(body);
+                });
+            });
+        }
+    });
+    if (message) return;
+
     // SQLクエリに影響する文字列を置換
     message.text = message.text.replace(/'/g,"''");
     let channelId = message.channel;
