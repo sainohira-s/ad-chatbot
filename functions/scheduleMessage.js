@@ -23,18 +23,14 @@ exports.says = function(bot) {
                 client.end()
                 return;
             }
+            setSchedule(bot, '0 30 9 * * *');
             if(resultSchedule.rowCount > 0){
                 for(var i=0; i<resultSchedule.rowCount; i++){
-                    console.log(resultSchedule.rows[i])
                     let cron = resultSchedule.rows[i].keyword;
-                    let scheduleMessage = '';
-                    if (cron != '0 30 9 * * 1,2,3,4,5' && !JSON.parse(cron)) {
-                        scheduleMessage = resultSchedule.rows[i].message[Math.floor(Math.random() * resultSchedule.rows[i].message.length)];
-                        setSchedule(bot, scheduleMessage, cron);
-                    } else if (JSON.parse(cron)) {
+                    if (JSON.parse(cron)) {
                         let dateJson = JSON.parse(cron);
                         let infoJson = JSON.parse(resultSchedule.rows[i].message);
-                        let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", '0 1 18 ' + dateJson.date + ' *', function(){
+                        let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", '0 20 9 ' + dateJson.date + ' *', function(){
                                     let clientSche = new pg.Client(conString);
                             clientSche.connect((err) => {
                                 if(err) {
@@ -53,7 +49,6 @@ exports.says = function(bot) {
                                     //let infoJson = JSON.parse('{"date":"11 7","selects":[{"text":"パン"},{"text":"ごはん"},{"text":"グラノーラ"},{"text":"食べない"}]}');
                                     let actions = []
                                     let enqResultJsons = []
-                                    console.log(infoJson)
                                     infoJson.selects.forEach((select, index) => {
                                         let action = {
                                                 "name": index,
@@ -75,23 +70,23 @@ exports.says = function(bot) {
                                         clientSche.end();
                                     });
                                     resultAccounts.rows.forEach((account) => {
-                                        bot.say({
-                                            channel: 'C67KTAYMP',
-                                            text: title,
-                                            username: 'otameshi',
-                                            icon_url: '',
-                                            attachments:[{
-                                                "fallback": "ボタン操作のできない端末またはブラウザです。",
-                                                "callback_id": 'schedule',
-                                                "color": config.color.selectingColor,
-                                                "actions": actions
-                                            }]
-                                        });
+                                        if (false == account.reviewer_flg) {
+                                            bot.say({
+                                                channel: account.account_id,
+                                                text: `Good morning! Today's Question! \n` + title,
+                                                attachments:[{
+                                                    "fallback": "ボタン操作のできない端末またはブラウザです。",
+                                                    "callback_id": 'schedule',
+                                                    "color": config.color.selectingColor,
+                                                    "actions": actions
+                                                }]
+                                            });
+                                        }
                                     });
                                 });
                             });
                         });
-                        let schedulerAfter = new schedule.scheduleJob("Today's Question Result!", '10 1 18 ' + dateJson.date + ' *', function(){
+                        let schedulerAfter = new schedule.scheduleJob("Today's Question Result!", '0 15 17 ' + dateJson.date + ' *', function(){
                             let clientSche = new pg.Client(conString);
                             clientSche.connect((err) => {
                                 if(err) {
@@ -114,73 +109,65 @@ exports.says = function(bot) {
                                             return;
                                         }
                                         let enqueteResultJson = JSON.parse(enqueteResult.rows[0].result)
-                                        console.log(enqueteResultJson)
-                                        let dataParam = 'dataJson=\\\{"data":[';
+                                        let count = 0;
+                                        let dataParam = '{"data":[';
                                         enqueteResultJson.forEach((item, index) => {
+                                            count += item.count
                                             let jsonStr = JSON.stringify(item)
-                                            jsonStr = jsonStr.replace(/{/,"\\\{")
-                                            jsonStr = jsonStr.replace(/}/,"\\\}")
+                                            jsonStr = jsonStr.replace(/{/,"{")
+                                            jsonStr = jsonStr.replace(/}/,"}")
                                             dataParam += jsonStr + ','
                                         })
                                         dataParam = dataParam.slice(0, -1);
-                                        dataParam += ']\\\}\\\&';
+                                        dataParam += ']}';
 
-                                        let channelParam = 'channels=\\\{"channels":['
+                                        let channelParam = '{"channels":['
                                         resultChannel.rows.forEach((channelInfo, index) => {
-                                            channelParam += '\\\{"name":"' + channelInfo.channel_id +'"\\\},'
+                                            channelParam += '{"name":"' + channelInfo.channel_id +'"},'
                                         })
+                                        let title = enqueteResult.rows[0].title + '(回答数: ' + count + ' )'
                                         channelParam = channelParam.slice(0, -1);
-                                        channelParam += ']\\\}\\\&';
-                                        let param = dataParam + channelParam + 'title=' + enqueteResult.rows[0].title.replace(/\?/,"\\\?") + '\\\&' + 'token=' + process.env.token + '\\\&'
+                                        channelParam += ']}';
+                                        console.log(dataParam)
                                         request({
-                                            url: 'https://script.google.com/macros/s/AKfycbwxRAxt9FN3wzlvZpV4BUxx5KF3-u8-FrumEkJJxbpq/exec?' + param + 'access_token=' + process.env.g_token,
-                                            method: 'GET',
-                                            json:  true
+                                            url: 'https://script.google.com/macros/s/AKfycbwxRAxt9FN3wzlvZpV4BUxx5KF3-u8-FrumEkJJxbpq/exec',
+                                            method: 'POST',
+                                            headers: {
+                                                "Authorization": "Bearer " + process.env.g_token
+                                            },
+                                            form:{
+                                                dataJson: dataParam,
+                                                channels: channelParam,
+                                                title: title,
+                                                token: process.env.token
+                                            },
                                         }, (err, response, body) => {
-                                            if (err) {
-                                                console.log('error入りました')
-                                                request({
-                                                    url: 'https://www.googleapis.com/oauth2/v4/token',
-                                                    method: 'POST',
-                                                    form:{
-                                                        grant_type:'refresh_token',
-                                                        client_id:'594646937602-otm65mc8pu947c0cmnh8hdfhp38o5moj.apps.googleusercontent.com',
-                                                        client_secret:'XB7jJk6wsCHfwbLI-k0F6RKW',
-                                                        refresh_token:process.env.refresh_token
-                                                    },
-                                                    json:  true
-                                                }, (err, response, body) => {
-                                                    process.env.g_token = body.access_token;
-                                                    console.log('https://script.google.com/macros/s/AKfycbwxRAxt9FN3wzlvZpV4BUxx5KF3-u8-FrumEkJJxbpq/exec?' + param + 'access_token=' + process.env.g_token)
-                                                    request({
-                                                        url: 'https://script.google.com/macros/s/AKfycbwxRAxt9FN3wzlvZpV4BUxx5KF3-u8-FrumEkJJxbpq/exec?' + param + 'access_token=' + process.env.g_token,
-                                                        method: 'GET',
-                                                        json:  true
-                                                    }, (err, response, body) => {
-                                                        console.log(body);
-                                                    });
-                                                });
-                                                client.end();
-                                                return;
-                                            }
-                                            if (body.indexOf('Error') != -1) {
+                                            if (body.indexOf('ファイルを開くことができません') != -1) {
                                                 console.log('body入りました')
                                                 request({
                                                     url: 'https://www.googleapis.com/oauth2/v4/token',
                                                     method: 'POST',
                                                     form:{
-                                                        grant_type:'refresh_token',
-                                                        client_id:'594646937602-otm65mc8pu947c0cmnh8hdfhp38o5moj.apps.googleusercontent.com',
-                                                        client_secret:'XB7jJk6wsCHfwbLI-k0F6RKW',
+                                                        grant_type: 'refresh_token',
+                                                        client_id: process.env.g_client_id,
+                                                        client_secret: process.env.g_client_secret,
                                                         refresh_token:process.env.refresh_token
                                                     },
                                                     json:  true
                                                 }, (err, response, body) => {
                                                     process.env.g_token = body.access_token;
                                                     request({
-                                                        url: 'https://script.google.com/macros/s/AKfycbwxRAxt9FN3wzlvZpV4BUxx5KF3-u8-FrumEkJJxbpq/exec?' + param + 'access_token=' + process.env.g_token,
-                                                        method: 'GET',
-                                                        json:  true
+                                                        url: 'https://script.google.com/macros/s/AKfycbwxRAxt9FN3wzlvZpV4BUxx5KF3-u8-FrumEkJJxbpq/exec',
+                                                        method: 'POST',
+                                                        headers: {
+                                                            "Authorization": "Bearer " + process.env.g_token
+                                                        },
+                                                        form:{
+                                                            dataJson: dataParam,
+                                                            channels: channelParam,
+                                                            title: title,
+                                                            token: process.env.token
+                                                        },
                                                     }, (err, response, body) => {
                                                         console.log(body);
                                                     });
@@ -194,23 +181,34 @@ exports.says = function(bot) {
                             });
                         });
                     } else {
-                        request({
-                            url: 'http://meigen.doodlenote.net/api?c=1',
-                            method: 'GET',
-                            json:  true
-                        }, (err, response, body) => {
-                            if (err == null) {
-                                parseString(body, (err, result) => {
+                        scheduleMessage = resultSchedule.rows[i].message[Math.floor(Math.random() * resultSchedule.rows[i].message.length)];
+                        let scheduler = new schedule.scheduleJob(scheduleMessage, cron, function(){
+                            let clientSche = new pg.Client(conString);
+                            clientSche.connect((err) => {
+                                if(err) {
+                                    console.log('[scheduleMessage]DB connected failed.', err);
+                                    clientSche.end();
+                                    return;
+                                }
+                                clientSche.query(config.sql.channels, function(err, resultChannel) {
                                     if(err) {
-                                        console.log(`Famous Quotes ERROR: ${err}`);
-                                    } else {
-                                        scheduleMessage = `Good morning everyone!! Today's inspirational quotes!~\n\n　　「 *${result.response.data[0].meigen[0]}* 」\n\n　(by ${result.response.data[0].auther[0]})`
-                                        setSchedule(bot, scheduleMessage, cron);
+                                        console.log('[scheduleMessage]error running ChannelList query.', err);
+                                        clientSche.end()
+                                        return;
                                     }
+
+                                    for(var j=0; j<resultChannel.rowCount; j++){
+                                        bot.say({
+                                            channel: resultChannel.rows[j].name,
+                                            text: this.name,
+                                            username: '',
+                                            icon_url: ''
+                                        });
+                                    }
+                                    clientSche.end();
+                                    return;
                                 });
-                            } else {
-                                console.log(`Famous Quotes ERROR: ${err}`);
-                            }
+                            });
                         });
                     }
                 }
@@ -221,12 +219,10 @@ exports.says = function(bot) {
     return;
 };
 
-function setSchedule(bot, scheduleMessage, cron) {
-    let scheduler = new schedule.scheduleJob(scheduleMessage, cron, function(){
-        let scheText = this.name;
-        if (scheText.match(/\\n/)) {
-            scheText = scheText.replace(/\\n/g,'\n');
-        }
+function setSchedule(bot, cron) {
+    console.log("aaa1")
+    let scheduler = new schedule.scheduleJob('', cron, function(){
+        console.log("aaa2")
         let clientSche = new pg.Client(conString);
         clientSche.connect((err) => {
             if(err) {
@@ -240,33 +236,36 @@ function setSchedule(bot, scheduleMessage, cron) {
                     clientSche.end()
                     return;
                 }
-                for(var j=0; j<resultChannel.rowCount; j++){
-                    bot.say({
-                        channel: resultChannel.rows[j].name,
-                        text: scheText,
-                        username: '',
-                        icon_url: '',
-                        attachments:[{
-                            "fallback": "ボタン操作のできない端末またはブラウザです。",
-                            "callback_id": 'schedule',
-                            "color": 'result',
-                            "actions": [{
-                                "name": 'test',
-                                "value": 'value',
-                                "text": 'text1',
-                                "type": "button",
-                                "style": "primary"
-                            },
-                            {
-                                "name": 'test',
-                                "value": 'value',
-                                "text": 'text2',
-                                "type": "button",
-                                "style": ""
-                            }]
-                        }]
-                    });
-                }
+                console.log("aaa3")
+                request({
+                    url: 'http://meigen.doodlenote.net/api?c=1',
+                    method: 'GET',
+                    json:  true
+                }, (err, response, body) => {
+                    if (err == null) {
+                        parseString(body, (err, result) => {
+                            if(err) {
+                                console.log(`Famous Quotes ERROR: ${err}`);
+                            } else {
+                                let scheText = `Good morning everyone!! Today's inspirational quotes!~\n\n　　「 *${result.response.data[0].meigen[0]}* 」\n\n　(by ${result.response.data[0].auther[0]})`
+                                if (scheText.match(/\\n/)) {
+                                    scheText = scheText.replace(/\\n/g,'\n');
+                                }
+                                for(var j=0; j<resultChannel.rowCount; j++){
+                                    bot.say({
+                                        channel: resultChannel.rows[j].name,
+                                        text: scheText,
+                                        username: '',
+                                        icon_url: ''
+                                    });
+                                }
+                            }
+                        });
+                    } else {
+                        console.log(`Famous Quotes ERROR: ${err}`);
+                    }
+                });
+                
                 clientSche.end();
             });
         });

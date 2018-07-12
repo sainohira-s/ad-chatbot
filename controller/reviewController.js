@@ -61,7 +61,6 @@ MAIN.startController = function startController(cConnectionString, cController, 
                 }
             ]
         }
-        
         bot.reply(message, {
             "text": "レビューしたいフェーズを選択してください。",
             "attachments": [jsonList]
