@@ -31,7 +31,7 @@ exports.says = function(bot) {
                         let dateJson = JSON.parse(cron);
                         let infoJson = JSON.parse(resultSchedule.rows[i].message);
                         let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", '0 20 9 ' + dateJson.date + ' *', function(){
-                                    let clientSche = new pg.Client(conString);
+                            let clientSche = new pg.Client(conString);
                             clientSche.connect((err) => {
                                 if(err) {
                                     console.log('[scheduleMessage]DB connected failed.', err);
@@ -221,7 +221,7 @@ exports.says = function(bot) {
 
 function setSchedule(bot, cron) {
     console.log("aaa1")
-    let scheduler = new schedule.scheduleJob('', cron, function(){
+    let scheduler = new schedule.scheduleJob('Message', cron, function(){
         console.log("aaa2")
         let clientSche = new pg.Client(conString);
         clientSche.connect((err) => {
