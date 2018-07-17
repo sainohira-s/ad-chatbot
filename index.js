@@ -157,7 +157,7 @@ controller.on('interactive_message_callback', function(bot, message) {
                 let resultJsons = JSON.parse(selectResult.rows[0].result);
                 resultJsons[message.actions[0].name].count = resultJsons[message.actions[0].name].count + 1;
 
-                let update = config.sql.update.enqueteResult.format(JSON.stringify(resultJsons), message.original_message.text);
+                let update = config.sql.update.enqueteResult.format(JSON.stringify(resultJsons), questionStr);
                 console.log(update);
                 client.query(update, (err, result) => {
                     if (err) {
