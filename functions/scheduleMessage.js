@@ -30,8 +30,10 @@ exports.says = function(bot) {
                     if (JSON.parse(cron)) {
                         let dateJson = JSON.parse(cron);
                         let infoJson = JSON.parse(resultSchedule.rows[i].message);
-                        let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", '0 50 10 ' + dateJson.date + ' *', function(){
+                        console.log('スケジュール')
+                        let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", '0 52 10 ' + dateJson.date + ' *', function(){
                             let clientSche = new pg.Client(conString);
+                            console.log('スケジュール2')
                             clientSche.connect((err) => {
                                 if(err) {
                                     console.log('[scheduleMessage]DB connected failed.', err);
@@ -45,6 +47,7 @@ exports.says = function(bot) {
                                         clientSche.end()
                                         return;
                                     }
+                                    console.log('スケジュール3')
                                     let title = infoJson.title;
                                     //let infoJson = JSON.parse('{"date":"11 7","selects":[{"text":"パン"},{"text":"ごはん"},{"text":"グラノーラ"},{"text":"食べない"}]}');
                                     let actions = []
@@ -69,6 +72,8 @@ exports.says = function(bot) {
                                         }
                                         clientSche.end();
                                     });
+                                    console.log('スケジュール4')
+                                    console.log('actions')
                                     resultAccounts.rows.forEach((account) => {
                                         if (false == account.reviewer_flg) {
                                             bot.say({
