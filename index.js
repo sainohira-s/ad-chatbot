@@ -146,7 +146,10 @@ controller.on('interactive_message_callback', function(bot, message) {
                 return;
             }
             util.setProperty(bot, message, client);
-            let select = config.sql.enqueteResult.format(message.original_message.text);
+            let questionStr = message.original_message.text.replace(`Good morning! Today's Question! \n`, '')
+            console.log(questionStr)
+            let select = config.sql.enqueteResult.format(questionStr);
+            
             console.log(select)
             client.query(select, (err, selectResult) => {
                 if (err) {
