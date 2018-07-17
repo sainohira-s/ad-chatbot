@@ -91,7 +91,7 @@ exports.says = function(bot) {
                                 });
                             });
                         });
-                        let schedulerAfter = new schedule.scheduleJob("Today's Question Result!", '0 2 6 ' + dateJson.date + ' *', function(){
+                        let schedulerAfter = new schedule.scheduleJob("Today's Question Result!", '0 5 6 ' + dateJson.date + ' *', function(){
                             let clientSche = new pg.Client(conString);
                             clientSche.connect((err) => {
                                 if(err) {
