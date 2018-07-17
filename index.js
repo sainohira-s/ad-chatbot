@@ -147,10 +147,7 @@ controller.on('interactive_message_callback', function(bot, message) {
             }
             util.setProperty(bot, message, client);
             let questionStr = message.original_message.text.replace(`Good morning! Today's Question! \n`, '')
-            console.log(questionStr)
             let select = config.sql.enqueteResult.format(questionStr);
-            
-            console.log(select)
             client.query(select, (err, selectResult) => {
                 if (err) {
                     util.botSay('現在のステータス取得時にエラー発生: ' + err);
@@ -159,12 +156,11 @@ controller.on('interactive_message_callback', function(bot, message) {
                 }
                 let resultJsons = JSON.parse(selectResult.rows[0].result);
                 resultJsons[message.actions[0].name].count = resultJsons[message.actions[0].name].count + 1;
-                console.log(JSON.stringify(resultJsons));
 
                 let update = config.sql.update.enqueteResult.format(JSON.stringify(resultJsons), message.original_message.text);
+                console.log(update);
                 client.query(update, (err, result) => {
                     if (err) {
-                        util.botSay('現在のステータス取得時にエラー発生: ' + err);
                         client.end();
                         return;
                     }
