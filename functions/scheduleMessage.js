@@ -31,7 +31,7 @@ exports.says = function(bot) {
                         let dateJson = JSON.parse(cron);
                         let infoJson = JSON.parse(resultSchedule.rows[i].message);
                         console.log('スケジュール')
-                        let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", '0 35 4 ' + dateJson.date + ' *', function(){
+                        let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", '0 4 5 ' + dateJson.date + ' *', function(){
                             let clientSche = new pg.Client(conString);
                             console.log('スケジュール2')
                             clientSche.connect((err) => {
@@ -91,7 +91,7 @@ exports.says = function(bot) {
                                 });
                             });
                         });
-                        let schedulerAfter = new schedule.scheduleJob("Today's Question Result!", '0 40 4 ' + dateJson.date + ' *', function(){
+                        let schedulerAfter = new schedule.scheduleJob("Today's Question Result!", '0 7 5 ' + dateJson.date + ' *', function(){
                             let clientSche = new pg.Client(conString);
                             clientSche.connect((err) => {
                                 if(err) {
@@ -133,7 +133,6 @@ exports.says = function(bot) {
                                         let title = enqueteResult.rows[0].title + '(回答数: ' + count + ' )'
                                         channelParam = channelParam.slice(0, -1);
                                         channelParam += ']}';
-                                        console.log(dataParam)
                                         request({
                                             url: 'https://script.google.com/macros/s/AKfycbwxRAxt9FN3wzlvZpV4BUxx5KF3-u8-FrumEkJJxbpq/exec',
                                             method: 'POST',

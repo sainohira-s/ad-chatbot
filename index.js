@@ -137,7 +137,8 @@ controller.on('interactive_message_callback', function(bot, message) {
         return;
     }
 
-    if ('schedule') {
+    if ('schedule' == message.callback_id) {
+        console.log('schedule')
         client = new pg.Client(connectionString);
         client.connect((err) => {
             if (err) {
@@ -146,6 +147,7 @@ controller.on('interactive_message_callback', function(bot, message) {
             }
             util.setProperty(bot, message, client);
             let select = config.sql.enqueteResult.format(message.original_message.text);
+            console.log(select)
             client.query(select, (err, selectResult) => {
                 if (err) {
                     util.botSay('現在のステータス取得時にエラー発生: ' + err);
