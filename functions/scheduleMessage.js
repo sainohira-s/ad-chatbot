@@ -30,7 +30,7 @@ exports.says = function(bot) {
                     if (JSON.parse(cron)) {
                         let dateJson = JSON.parse(cron);
                         let infoJson = JSON.parse(resultSchedule.rows[i].message);
-                        let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", '0 20 9 ' + dateJson.date + ' *', function(){
+                        let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", '0 50 10 ' + dateJson.date + ' *', function(){
                             let clientSche = new pg.Client(conString);
                             clientSche.connect((err) => {
                                 if(err) {
@@ -86,7 +86,7 @@ exports.says = function(bot) {
                                 });
                             });
                         });
-                        let schedulerAfter = new schedule.scheduleJob("Today's Question Result!", '0 15 17 ' + dateJson.date + ' *', function(){
+                        let schedulerAfter = new schedule.scheduleJob("Today's Question Result!", '0 55 10 ' + dateJson.date + ' *', function(){
                             let clientSche = new pg.Client(conString);
                             clientSche.connect((err) => {
                                 if(err) {
