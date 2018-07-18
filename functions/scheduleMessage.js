@@ -27,11 +27,12 @@ exports.says = function(bot) {
             if(resultSchedule.rowCount > 0){
                 for(var i=0; i<resultSchedule.rowCount; i++){
                     let cron = resultSchedule.rows[i].keyword;
-                    if (JSON.parse(cron)) {
-                        let dateJson = JSON.parse(cron);
+                    if (resultSchedule.rows[i].type_id == 0) {
+                        let cronJson = JSON.parse(cron)
                         let infoJson = JSON.parse(resultSchedule.rows[i].message);
                         console.log('スケジュール')
-                        let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", '0 0 6 ' + dateJson.date + ' *', function(){
+                        console.log(cron)
+                        let scheduler = new schedule.scheduleJob("Good morning! Today's Question!", cronJson.date, function(){
                             let clientSche = new pg.Client(conString);
                             console.log('スケジュール2')
                             clientSche.connect((err) => {
@@ -91,7 +92,7 @@ exports.says = function(bot) {
                                 });
                             });
                         });
-                        let schedulerAfter = new schedule.scheduleJob("Today's Question Result!", '0 5 6 ' + dateJson.date + ' *', function(){
+                        let schedulerAfter = new schedule.scheduleJob("Today's Question Result!", cronJson.result, function(){
                             let clientSche = new pg.Client(conString);
                             clientSche.connect((err) => {
                                 if(err) {

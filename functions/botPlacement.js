@@ -19,7 +19,9 @@ exports.joinChannel = function(bBot, bMessage, targetChannelList) {
         let channelId = message.channel
         // 登録するチャンネルがDBに存在するか確認
         bot.api.channels.info({'channel': message.channel}, (err, res) => {
+            console.log(channelId + ':::'+ res.channel.name)
             let insertChannel = config.sql.insert.channel.format(channelId, res.channel.name)
+            console.log(insertChannel)
             jcClient.query(insertChannel, (err, result) => {
                 if(err) {
                     throw err;
