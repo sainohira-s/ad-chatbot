@@ -112,13 +112,14 @@ MAIN.sendReviewDetailList = function sendReviewDetailList() {
                 }
                 if (accountStatusResult.rowCount == 0) {
                     bot.reply(message, 'saibotのいるチャンネルに所属していません。')
+                    ssrlClient.end();
                 } else {
                     let existChannel = false;
                     accountStatusResult.rows.some((accountStatus) => {
                         if (accountStatus.channel_name == message.channel){
                             existChannel = true;
                             displayButtonForReviewStatusCheckForSummaryButton(bot, message, ssrlClient, message.channel, questionListResult, accountStatusResult);
-                            return true;
+                            return existChannel;
                         }
                     });
 
@@ -126,7 +127,6 @@ MAIN.sendReviewDetailList = function sendReviewDetailList() {
                         let channelId = accountStatusResult.rows[0].channel_id;
                         displayButtonForReviewStatusCheckForSummaryButton(bot, message, ssrlClient, channelId, questionListResult, accountStatusResult);
                     }
-                    ssrlClient.end();
                 }
             });
         });
