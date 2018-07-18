@@ -60,6 +60,7 @@ MAIN.sendReviewTitleList = function sendReviewTitleList(specifyCallBackId) {
                     }
                     if (accountStatusResult.rowCount == 0) {
                         bot.reply(message, 'sai-botのいるチャンネルに所属していません。')
+                        ssrlClient.end();
                     } else {
                         if (accountStatusResult.rows[0].account_reviewer_flg) {
                             displayForReviewer(bot, message, ssrlClient, summaryResult, questionListResult);
@@ -80,7 +81,6 @@ MAIN.sendReviewTitleList = function sendReviewTitleList(specifyCallBackId) {
                             displayButtonForReviewStatusCheckForPhase(bot, message, ssrlClient, channelId, summaryResult, questionListResult, specifyCallBackId, existChannel);
                         }
                     }
-                    ssrlClient.end();
                 });
             });
         });
@@ -127,7 +127,6 @@ MAIN.sendReviewDetailList = function sendReviewDetailList() {
                         displayButtonForReviewStatusCheckForSummaryButton(bot, message, ssrlClient, channelId, questionListResult, accountStatusResult);
                     }
                 }
-                ssrlClient.end();
             });
         });
     });
