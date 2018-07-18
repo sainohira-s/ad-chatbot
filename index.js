@@ -195,7 +195,7 @@ controller.on('rtm_close',function(bot) {
   // you may want to attempt to re-open
 });
 
-controller.hears('', 'ambient,direct_message,direct_mention,mention', (bot, message) => {
+controller.hears('', 'direct_message,direct_mention,mention', (bot, message) => {
 
     // SQLクエリに影響する文字列を置換
     message.text = message.text.replace(/'/g,"''");
