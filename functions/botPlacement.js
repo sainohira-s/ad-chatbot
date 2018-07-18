@@ -24,6 +24,7 @@ exports.joinChannel = function(bBot, bMessage, targetChannelList) {
             console.log(insertChannel)
             jcClient.query(insertChannel, (err, result) => {
                 if(err) {
+                    console.log(insertChannel)
                     throw err;
                 }
                 insertAccountInfo(res.channel);
@@ -83,6 +84,7 @@ function insertAccountInfo(channelInfo) {
                             let selectAccount = config.sql.accountFromAccountId.format(memberId)
                             iaiClient.query(selectAccount, (err, resultAccount) => {
                                 if(err) {
+                                    console.log(selectAccount)
                                     iaiClient.end();
                                     throw err;
                                 }
@@ -93,6 +95,7 @@ function insertAccountInfo(channelInfo) {
                                     insertAccountInfo = config.sql.insert.account.format(memberId, res.user.name) + insertAccountInfo
                                     iaiClient.query(insertAccountInfo, (err, result) => {
                                         if(err) {
+                                            console.log(insertAccountInfo)
                                             iaiClient.end();
                                             throw err;
                                         }
@@ -101,6 +104,7 @@ function insertAccountInfo(channelInfo) {
                                 } else {
                                     iaiClient.query(insertAccountInfo, (err, result) => {
                                         if(err) {
+                                            console.log(insertAccountInfo)
                                             iaiClient.end();
                                             throw err;
                                         }

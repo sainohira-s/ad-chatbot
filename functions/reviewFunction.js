@@ -34,6 +34,7 @@ MAIN.sendReviewQuestionDetailList = function sendReviewQuestionDetailList() {
     ssrlClient.connect((err) => {
         if (err) {
             console.log('error: ' + err);
+            ssrlClient.end();
         }
         let select = config.sql.review.accountChannelStatusFromAccountId.format(message.user)
         ssrlClient.query(select, function(err, questionPassingResult) {
@@ -113,6 +114,7 @@ MAIN.sendReviewQuestionDetailListForNextStep = function sendReviewQuestionDetail
     ssrlClient.connect((err) => {
         if (err) {
             console.log('error: ' + err);
+            ssrlClient.end();
         }
         let summaryId = message.actions[0].name.match(/[0-9]*/)[0]|0;
         let titleNumber = message.actions[0].name.match(/[0-9]*$/)[0]|0;
@@ -192,6 +194,7 @@ MAIN.sendReviewQuestionDetailListForAns = function sendReviewQuestionDetailListF
     ssrlClient.connect((err) => {
         if (err) {
             console.log('error: ' + err);
+            ssrlClient.end();
         }
         let accountId = message.user
         let summaryId = message.actions[0].name.match(/[0-9]*/)[0]|0;
@@ -260,6 +263,7 @@ MAIN.sendReviewQuestionDetailListForClear = function sendReviewQuestionDetailLis
     ssrlClient.connect((err) => {
         if (err) {
             console.log('error: ' + err);
+            ssrlClient.end();
         }
         let accountId = message.user
         let summaryId = message.actions[0].name.match(/[0-9]*/)[0]|0;

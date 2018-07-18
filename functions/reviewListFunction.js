@@ -126,6 +126,7 @@ MAIN.sendReviewDetailList = function sendReviewDetailList() {
                         let channelId = accountStatusResult.rows[0].channel_id;
                         displayButtonForReviewStatusCheckForSummaryButton(bot, message, ssrlClient, channelId, questionListResult, accountStatusResult);
                     }
+                    ssrlClient.end();
                 }
             });
         });
