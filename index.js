@@ -171,6 +171,7 @@ controller.on('interactive_message_callback', function(bot, message) {
                             "color": config.color.selectedColor
                         }]
                     })
+                    client.end();
                 });
             });
         });

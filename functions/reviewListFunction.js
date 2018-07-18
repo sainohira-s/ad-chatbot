@@ -80,6 +80,7 @@ MAIN.sendReviewTitleList = function sendReviewTitleList(specifyCallBackId) {
                             displayButtonForReviewStatusCheckForPhase(bot, message, ssrlClient, channelId, summaryResult, questionListResult, specifyCallBackId, existChannel);
                         }
                     }
+                    ssrlClient.end();
                 });
             });
         });
@@ -126,6 +127,7 @@ MAIN.sendReviewDetailList = function sendReviewDetailList() {
                         displayButtonForReviewStatusCheckForSummaryButton(bot, message, ssrlClient, channelId, questionListResult, accountStatusResult);
                     }
                 }
+                ssrlClient.end();
             });
         });
     });
@@ -367,6 +369,7 @@ function displayForReviewer(bot, message, ssrlClient, summaryResult, questionLis
                     })
                 }
             })
+            console.log(channelInfo)
             var attachmentJson = util.attachmentJsonGeneratorForText("*■" + channelInfo[0].channel_name + '*', config.color.resultColor)
             attachments.push(attachmentJson);
 
