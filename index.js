@@ -120,11 +120,11 @@ controller.on('interactive_message_callback', function(bot, message) {
         review.setProperty(bot, message, channelWordDic, targetChannelList);
         review.sendReviewQuestionDetailList();
         return;
-    } else if ('nextStepReview' == message.callback_id) {
-        // 「次へ」押下後の処理
-        review.setProperty(bot, message, channelWordDic, targetChannelList);
-        review.sendReviewQuestionDetailListForNextStep();
-        return;
+    // } else if ('nextStepReview' == message.callback_id) {
+        // // 「次へ」押下後の処理
+        // review.setProperty(bot, message, channelWordDic, targetChannelList);
+        // review.sendReviewQuestionDetailListForNextStep();
+        // return;
     } else if ('checkedReview' == message.callback_id) {
         // 「OK」「NG」押下後の処理
         review.setProperty(bot, message, channelWordDic, targetChannelList);

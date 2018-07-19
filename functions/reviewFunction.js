@@ -52,143 +52,72 @@ MAIN.sendReviewQuestionDetailList = function sendReviewQuestionDetailList() {
                 }
 
                 let attachmentsJson = []
-                let tmpTitle = '';
+                let text = '';
                 questionListResult.rows.some((questionInfo) => {
-                    if (tmpTitle != questionInfo.title) {
-                        if (tmpTitle != '') {
-                            let name = String(questionInfo.summary_id) +'_'+ String(questionInfo.title_number)
-                            attachmentsJson.push(buttonAttachmentGenarator(name, '次へ', 'NextStep', '', 'nextStepReview', config.color.attentionColor));
-                            return true;
+                    if (!text.match(questionInfo.title)) {
+                        if (text != ''){
+                            text += '```\n'
                         }
-                        tmpTitle = questionInfo.title
-                        let text = '■ *' + tmpTitle + '*'
-                        let attachmentForTitle = util.attachmentJsonGeneratorForText(text, config.color.resultColor);
-                        attachmentsJson.push(attachmentForTitle);
+                        text += '■ *' + questionInfo.title + '*\n ```'
                     }
 
-                    let questionText = questionInfo.question_number + '. ' + questionInfo.question.replace(/\\n/g,"\n");
-                    let attachmentForQuestion = util.attachmentJsonGeneratorForText(questionText, config.color.resultColor);
-                    let passingQuestionList = questionPassingResult.rows[0].passing_question;
-                    let passingFlag = false;
-                    passingQuestionList.some((passingQuestion) => {
-                        let summaryId = passingQuestion.match(/[0-9]*/)[0]|0;
-                        let questionId= passingQuestion.match(/[0-9]*$/)[0]|0;
-                        if (summaryId == questionInfo.summary_id) {
-                            if (questionId == questionInfo.question_id){
-                                passingFlag = true;
-                                return passingFlag;
-                            }
-                        }
-                    })
-                    attachmentsJson.push(attachmentForQuestion);
-                    if (passingFlag) {
-                        let attachmentForText = util.attachmentJsonGeneratorForText('`OK`' , config.color.resultColor);
-                        attachmentsJson.push(attachmentForText);
-                    } else {
-                        let name = String(questionInfo.summary_id) + '_' + String(questionInfo.question_id);
-                        attachmentsJson.push(buttonAttachmentGenarator(name, 'OK', 'OK', 'primary', 'checkedReview', config.color.selectingColor));
-                    }
+                    let questionText = '  ' + questionInfo.question_number + '. ' + questionInfo.question.replace(/\\n/g,"\n");
+                    text += questionText + '\n';
                 })
 
-                let clearSummaryId = questionListResult.rows[0].summary_id;
-                let clearCategoryId = questionListResult.rows[0].category_id;
-                if (!attachmentsJson[attachmentsJson.length -1].actions || attachmentsJson[attachmentsJson.length -1].actions[0].value != "NextStep") {
-                    let name = String(clearSummaryId) + '_' + String(clearCategoryId)
-                    attachmentsJson.push(buttonAttachmentGenarator(name, 'クリア', 'Clear', 'danger', 'clearReview', config.color.resultColor));
-                }
 
-                bot.reply(message, {
-                    text: '以下のチェック項目を確認し、回答してください。 (計:' +　questionListResult.rows.length + '問 )',
-                    attachments: attachmentsJson
+                text += '```';
+                console.log(text)
+                attachmentsJson.push(util.attachmentJsonGeneratorForText(text, config.color.resultColor));
+
+                let summaryId = questionListResult.rows[0].summary_id;
+                let categoryId = questionListResult.rows[0].category_id;
+                let name = String(summaryId) + '_' + String(categoryId)
+
+                let select = config.sql.review.accountChannelStatusFromAccountId.format(message.user)
+                ssrlClient.query(select, function(err, questionPassingResult) {
+                    if(err) {
+                        console.log('回答状況取得時にエラー発生: ' + err);
+                        ssrlClient.end();
+                        return;
+                    }
+                    let questionListSelect = config.sql.review.questionListForCategoryId.format(categoryId)
+                    ssrlClient.query(questionListSelect, function(err, questionListResult) {
+                        if(err) {
+                            console.log('回答状況取得時にエラー発生: ' + err);
+                            ssrlClient.end();
+                            return;
+                        }
+
+                        let isPassed = false;
+                        questionListResult.rows.some((questionInfo) => {
+                            questionPassingResult.rows[0].passing_question.some((qustionPassing) =>{ 
+                                if (questionInfo.question_id == qustionPassing.match(/[0-9]*$/)[0]|0) {
+                                    isPassed = true;
+                                    return isPassed;
+                                }
+                            })
+                            return false == isPassed
+                        })
+
+                        if (isPassed){
+                            attachmentsJson.push(buttonAttachmentGenarator(name, 'クリア', 'Clear', 'danger', 'clearReview', config.color.resultColor));
+                        } else {
+                            attachmentsJson.push(buttonAttachmentGenarator(name, 'OK', 'OK', 'primary', 'checkedReview', config.color.selectingColor));
+                        }
+                        bot.reply(message, {
+                            text: '以下のチェック項目を確認し、回答してください。 (計:' +　questionListResult.rows.length + '問 )',
+                            attachments: attachmentsJson
+                        });
+                        ssrlClient.end();
+                    });
                 });
-                ssrlClient.end();
             });
         });
     });
 }
 
-// 「次へ」押下：レビューの質問を送信
-MAIN.sendReviewQuestionDetailListForNextStep = function sendReviewQuestionDetailListForNextStep(statusResult, channelId, bot_message) {
-    // データベースから各フェーズのレビュー詳細一覧を取得する
-    let ssrlClient = new pg.Client(connectionString);
-    ssrlClient.connect((err) => {
-        if (err) {
-            console.log('error: ' + err);
-            ssrlClient.end();
-        }
-        let summaryId = message.actions[0].name.match(/[0-9]*/)[0]|0;
-        let titleNumber = message.actions[0].name.match(/[0-9]*$/)[0]|0;
-        let select = config.sql.review.accountChannelStatusFromAccountId.format(message.user)
-        ssrlClient.query(select, function(err, questionPassingResult) {
-            if(err) {
-                console.log('回答状況取得時にエラー発生: ' + err);
-                ssrlClient.end();
-                return;
-            }
-            let selectQuestionList = config.sql.review.questionListFromSummaryId.format(summaryId);
-            ssrlClient.query(selectQuestionList, function(err, questionListResult) {
-                if(err) {
-                    console.log('レビュー一覧(詳細)取得時にエラー発生: ' + err);
-                    ssrlClient.end();
-                    return;
-                }
-                let attachmentsJson = []
-                let tmpTitle = '';
-                let categoryId = "";
-                questionListResult.rows.some((questionInfo) => {
-                    categoryId = questionInfo.category_id;
-                    if (tmpTitle != questionInfo.title) {
-                        if (tmpTitle != '' && titleNumber < questionInfo.title_number) {
-                            let name = String(questionInfo.summary_id) +'_'+ String(questionInfo.title_number)
-                            attachmentsJson.push(buttonAttachmentGenarator(name, '次へ', 'NextStep', '', 'nextStepReview', config.color.attentionColor));
-                            return true;
-                        }
-                        tmpTitle = questionInfo.title
-                        let text = '■ *' + tmpTitle + '*'
-                        let attachmentForTitle = util.attachmentJsonGeneratorForText(text, config.color.resultColor);
-                        attachmentsJson.push(attachmentForTitle);
-                    }
-
-                    let questionText = questionInfo.question_number + '. ' + questionInfo.question.replace(/\\n/g,"\n");
-                    let attachmentForQuestion = util.attachmentJsonGeneratorForText(questionText, config.color.resultColor);
-                    let passingQuestionList = questionPassingResult.rows[0].passing_question;
-                    let passingFlag = false;
-                    passingQuestionList.some((passingQuestion) => {
-                        let summaryId = passingQuestion.match(/[0-9]*/)[0]|0;
-                        let questionId= passingQuestion.match(/[0-9]*$/)[0]|0;
-                        if (summaryId == questionInfo.summary_id) {
-                            if (questionId == questionInfo.question_id){
-                                passingFlag = true;
-                                return passingFlag;
-                            }
-                        }
-                    })
-                    attachmentsJson.push(attachmentForQuestion);
-                    if (passingFlag) {
-                        let attachmentForText = util.attachmentJsonGeneratorForText('`OK`' , config.color.resultColor);
-                        attachmentsJson.push(attachmentForText);
-                    } else {
-                        let name = String(questionInfo.summary_id) + '_' + String(questionInfo.question_id)
-                        attachmentsJson.push(buttonAttachmentGenarator(name, 'OK', 'OK', 'primary', 'checkedReview', config.color.selectingColor));
-                    }
-                })
-
-                if (!attachmentsJson[attachmentsJson.length -1].actions || attachmentsJson[attachmentsJson.length -1].actions[0].value != "NextStep") {
-                    let name = String(summaryId) +'_'+ String(categoryId)
-                    attachmentsJson.push(buttonAttachmentGenarator(name, 'クリア', 'Clear', 'danger', 'clearReview', config.color.resultColor));
-                }
-
-                bot.replyInteractive(message, {
-                    text: '以下のチェック項目を確認し、回答してください。 (計:' +　questionListResult.rows.length + '問 )',
-                    attachments: attachmentsJson
-                });
-                ssrlClient.end();
-            });
-        });
-    });
-}
-
-// 「OK」「NG」押下：レビューの質問を送信 (From ダイレクトメッセージ)
+// 「OK」押下：レビューの質問を送信 (From ダイレクトメッセージ)
 MAIN.sendReviewQuestionDetailListForAns = function sendReviewQuestionDetailListForAns(statusResult, channelId, bot_message) {
     let ssrlClient = new pg.Client(connectionString);
     ssrlClient.connect((err) => {
@@ -198,8 +127,8 @@ MAIN.sendReviewQuestionDetailListForAns = function sendReviewQuestionDetailListF
         }
         let accountId = message.user
         let summaryId = message.actions[0].name.match(/[0-9]*/)[0]|0;
-        let questionNumber = message.actions[0].name.match(/[0-9]*$/)[0]|0;
-        let passingId = summaryId + '_' + questionNumber;
+        let categoryId = message.actions[0].name.match(/[0-9]*$/)[0]|0;
+        //let passingId = summaryId + '_' + categoryId;
         
         let select = config.sql.review.accountChannelStatusFromAccountId.format(accountId)
         ssrlClient.query(select, function(err, questionPassingResult) {
@@ -208,50 +137,47 @@ MAIN.sendReviewQuestionDetailListForAns = function sendReviewQuestionDetailListF
                 ssrlClient.end();
                 return;
             }
-            
-            let passingQuestionList = questionPassingResult.rows[0].passing_question;
-            console.log(passingQuestionList)
-            let isSame = false;
-            passingQuestionList.some((passingQuestion) => {
-                isSame = passingQuestion == passingId;
-                return isSame;
-            })
-            if (false == isSame) {
-                passingQuestionList.push(passingId);
-            }
-
-            // ユーザーの回答状況を更新
-            let update = config.sql.review.update.accountChannelPassingQuestion.format(util.arrayToString(passingQuestionList), accountId);
-            console.log(update)
-            ssrlClient.query(update, function(err, result) {
+            let questionListSelect = config.sql.review.questionListForCategoryId.format(categoryId)
+            ssrlClient.query(questionListSelect, function(err, questionListResult) {
                 if(err) {
-                    console.log('回答状況更新時にエラー発生: ' + err);
+                    console.log('回答状況取得時にエラー発生: ' + err);
                     ssrlClient.end();
                     return;
                 }
-                let interactiveJson = message.original_message
-                let attachments = interactiveJson.attachments
-                let flag = false;
-                attachments = attachments.map((attachment) => {
-                    let attachmentJson = JSON.parse(JSON.stringify(attachment));
-                    if (attachment.actions) {
-                        attachment.actions.forEach((action, index) => {
-                            if (action.name == passingId) {
-                                if (false == flag) {
-                                    attachmentJson = {
-                                        "text": '`' + message.actions[0].value + '`',
-                                        "color": config.color.resultColor
-                                    }
-                                } 
-                                flag = true;
-                            }
-                        })
+                let passingQuestionList = questionPassingResult.rows[0].passing_question;
+                let isSame = false;
+                questionListResult.rows.some((questionInfo) => {
+                    passingQuestionList.some((passingQuestion) => {
+                        let passingSummaryId = passingQuestion.match(/[0-9]*/)[0]|0;
+                        if (passingSummaryId == summaryId) {
+                             isSame = questionInfo.question_id == passingQuestion.match(/[0-9]*$/)[0]|0;
+                             return isSame;
+                        }
+                    })
+
+                    if (isSame) {
+                        return isSame;
                     }
-                    return attachmentJson;
+
+                    passingQuestionList.push(summaryId + '_' + questionInfo.question_id);
                 })
-                interactiveJson.attachments = attachments
-                bot.replyInteractive(message, interactiveJson);
-                ssrlClient.end();
+                console.log(passingQuestionList)
+                // ユーザーの回答状況を更新
+                let update = config.sql.review.update.accountChannelPassingQuestion.format(util.arrayToString(passingQuestionList), accountId);
+                console.log(update)
+                ssrlClient.query(update, function(err, result) {
+                    if(err) {
+                        console.log('回答状況更新時にエラー発生: ' + err);
+                        ssrlClient.end();
+                        return;
+                    }
+                    ssrlClient.end();
+                    let interactiveJson = message.original_message;
+                    let attachments = interactiveJson.attachments;
+                    attachments[1] = buttonAttachmentGenarator(summaryId + '_' + categoryId, 'クリア', 'Clear', 'danger', 'clearReview', config.color.resultColor);
+                    interactiveJson.attachments = attachments;
+                    bot.replyInteractive(message, interactiveJson);
+                });
             });
         });
     });
@@ -309,33 +235,12 @@ MAIN.sendReviewQuestionDetailListForClear = function sendReviewQuestionDetailLis
                     let interactiveJson = message.original_message
                     let attachments = interactiveJson.attachments
                     let questionNumber = 0;
-                    attachments = attachments.map((attachment) => {
-                        if (attachment.text && false == (attachment.text == '`OK`' || attachment.text.indexOf('■') != -1)) {
-                            questionNumber += 1
-                        }
-                        console.log(questionNumber)
-                        if (attachment.text == '`OK`') {
-                            let actionsJson = [{
-                                "name":"",
-                                "text": "OK",
-                                "value": "OK",
-                                "type": "button",
-                                "style": "primary"
-                            }]
-                            actionsJson[0].name = String(summaryId) + '_' + String(questionListResult.rows[questionNumber-1].question_id);
-                            let attachmentForAction = util.attachmentJsonGeneratorForAction('checkedReview', config.color.selectingColor, actionsJson);
-                            return attachmentForAction;
-                        }
-                        return attachment;
-                    })
+                    attachments[1] = buttonAttachmentGenarator(summaryId + '_' + categoryId, 'OK', 'OK', 'primary', 'checkedReview', config.color.selectingColor);
                     interactiveJson.attachments = attachments
-                    attachments.forEach((attachment) => {
-                        console.log(attachment)
-                    })
                     bot.replyInteractive(message, interactiveJson);
                     ssrlClient.end();
                 });
-            });            
+            });
         });
     });
 }
