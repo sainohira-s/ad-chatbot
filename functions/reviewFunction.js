@@ -92,8 +92,8 @@ MAIN.sendReviewQuestionDetailList = function sendReviewQuestionDetailList() {
                         let isPassed = false;
                         questionListResult.rows.some((questionInfo) => {
                             questionPassingResult.rows[0].passing_question.some((qustionPassing) =>{ 
-                                if (questionInfo.question_id == qustionPassing.match(/[0-9]*$/)[0]|0) {
-                                    isPassed = true;
+                                if (summaryId == qustionPassing.match(/[0-9]*/)[0]|0) {
+                                    isPassed = questionInfo.question_id == qustionPassing.match(/[0-9]*$/)[0]|0;
                                     return isPassed;
                                 }
                             })
